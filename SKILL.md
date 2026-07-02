@@ -17,6 +17,16 @@ You describe the campaign. Claude handles targeting, placements, budgets, creati
 
 ## Quickstart
 
+### Step 0 — Browser extension (required)
+
+This skill drives ad platform UIs directly in your browser. The extension is required for LinkedIn and for browser fallback mode on X and Google.
+
+1. Install the **Claude for Chrome** extension from the Chrome Web Store
+2. In Claude Code, enable it under Settings → MCP → Browser
+3. Open Chrome and log into the ad platform you want to use (LinkedIn Campaign Manager, Meta Business Manager, etc.)
+
+### Step 1 — Run the skill
+
 1. Open Claude Code
 2. Say: **"Run the agentic-ads skill"**
 3. Claude will ask:

@@ -4,9 +4,10 @@ Claude drives LinkedIn Campaign Manager directly via browser automation. No API 
 
 ## Prerequisites
 
-- Claude Code installed (claude.ai/code)
-- Logged into LinkedIn Campaign Manager in Chrome
-- Account ID handy (find it in the Campaign Manager URL: `/accounts/{ID}/`)
+1. **Claude for Chrome extension** — install from the Chrome Web Store, then enable under Claude Code Settings → MCP → Browser. This is what lets Claude drive the Campaign Manager UI.
+2. **Claude Code** — claude.ai/code
+3. **Logged into LinkedIn Campaign Manager in Chrome** — navigate to linkedin.com/campaignmanager before starting
+4. **Account ID** — find it in the Campaign Manager URL: `/accounts/{ID}/`
 
 ## How it works
 

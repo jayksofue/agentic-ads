@@ -12,8 +12,18 @@ Deployed at [Eco](https://eco.com):
 
 ## Quickstart
 
+### Step 0 — Browser extension (required)
+
+This skill drives ad platform UIs directly in your browser. Install it first.
+
+1. Install the **Claude for Chrome** extension from the Chrome Web Store
+2. In Claude Code, enable it under Settings → MCP → Browser
+3. Open Chrome and log into the ad platform you want to use
+
+### Step 1 — Run the skill
+
 1. Install [Claude Code](https://claude.ai/code)
-2. Clone this repo and point Claude at it:
+2. Clone this repo and load the skill:
    ```
    claude --skill ./agentic-ads/SKILL.md
    ```
