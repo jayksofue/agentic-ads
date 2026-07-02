@@ -80,53 +80,72 @@ Claude navigates to the campaign, selects it, and deletes it from the campaign l
 
 ---
 
-## Method 2: Marketing API via Meta MCP
+## Method 2: Marketing API via the `meta-ads` CLI
 
-Claude calls the API directly — faster for bulk setup, no UI interaction.
+Claude calls the Marketing API through the `meta-ads` command-line tool. Faster for bulk setup, no UI interaction.
+
+> **QA status (2026-07-02): NOT confirmed from claude.ai.**
+> The live dry-run → create-paused → delete cycle could not be run in a non-interactive claude.ai session, because no `META_ACCESS_TOKEN` is available there to authenticate against Meta. The commands below are verified against the real `meta-ads` CLI v0.18.1 `--help` output, but the end-to-end API round-trip has only been exercised from a terminal with a configured token, not from claude.ai. A non-interactive session cannot complete the OAuth/token step on its own.
+>
+> Earlier drafts of this section referenced `@anthropic-ai/mcp-server-meta` and `cli-meta-ads`. Neither exists on npm anymore (`@anthropic-ai/mcp-server-meta` returns 404; `cli-meta-ads` was unpublished 2026-05-28). Use the `meta-ads` package instead.
 
 ### Prerequisites
 
-1. **Install the Meta MCP**
+1. **Install the CLI** (npm package `meta-ads`, actively maintained, v0.18.1+):
 
    ```bash
-   npx @anthropic-ai/mcp-server-meta
+   npm install -g meta-ads
+   # or run ad-hoc without installing:
+   npx -y meta-ads@latest --help
    ```
 
-   Or add to your Claude Code MCP config:
+   Verify with `meta-ads --version`.
 
-   ```json
-   {
-     "mcpServers": {
-       "meta": {
-         "command": "npx",
-         "args": ["-y", "@anthropic-ai/mcp-server-meta"]
-       }
-     }
-   }
+2. **Authenticate.** Interactive OAuth or a pasted token:
+
+   ```bash
+   meta-ads auth login      # OAuth2, or paste an access token
+   meta-ads auth status     # confirm you're authenticated
    ```
 
-2. **Authenticate** — on first run, Claude prompts you to connect your Meta Business account via OAuth. Approve in the Meta dialog — Claude never sees your password.
+   Non-interactive (a terminal or CI where a token is already exchanged):
+
+   ```bash
+   meta-ads setup --non-interactive --token "$META_ACCESS_TOKEN" --account-id act_XXXXXXXXXX
+   ```
+
+   The token needs the `ads_management`, `ads_read`, and `business_management` scopes and expires roughly every 60 days.
 
 3. **Ad Account ID** — format: `act_XXXXXXXXXX`
 
 ### What Claude does via API
 
-Claude calls the Marketing API to create campaign + ad set in one shot, both set to PAUSED. The structure matches what you'd see in Ads Manager:
+Claude creates the campaign and ad set, both PAUSED. The structure matches Ads Manager:
 - Campaign: objective, name, status = PAUSED, budget
-- Ad Set: targeting, optimization goal, billing event, Advantage+ Audience disabled, Dynamic Creative off
+- Ad Set: targeting, optimization goal, billing event
 
-**Key API behaviors (verified Jul 2026):**
-- Budget is passed in **cents** — `$10 daily = 1000`
-- `validate_only: true` does NOT prevent creation — Meta ignores it and creates the objects anyway. Campaign and ad set come back PAUSED so nothing spends, but they are real objects that need to be deleted after QA
-- Advantage+ Audience: **disabled by default** via API (opposite of browser default — no extra step needed)
-- Dynamic Creative: **off by default** via API
+```bash
+meta-ads campaigns create \
+  --account-id act_XXXXXXXXXX \
+  --name "QA_Engagement_Jul2026" \
+  --objective OUTCOME_ENGAGEMENT \
+  --status PAUSED \
+  --daily-budget 1000
+```
+
+**Key CLI behaviors (verified against meta-ads v0.18.1):**
+- Budget is passed in **cents**: `$10 daily = --daily-budget 1000`
+- Objective uses the `OUTCOME_*` enum: `OUTCOME_AWARENESS`, `OUTCOME_TRAFFIC`, `OUTCOME_ENGAGEMENT`, `OUTCOME_LEADS`, `OUTCOME_APP_PROMOTION`, `OUTCOME_SALES`. Engagement = `OUTCOME_ENGAGEMENT`.
+- `--status` defaults to `PAUSED` on create, so nothing serves until you flip it to `ACTIVE`.
+- `--dry-run` prints the exact request without executing it, so nothing is created (see below).
+- Advantage+ Audience and Dynamic Creative are controlled through the ad set targeting/creative spec, not campaign flags. Do not assume a default; set them explicitly and re-read with `meta-ads adsets get` to confirm.
 
 ### Campaign setup prompt
 
 ```
 Create a Meta ads campaign via the Marketing API:
 - Ad account: act_[your account ID]
-- Objective: AWARENESS / ENGAGEMENT / TRAFFIC / CONVERSIONS
+- Objective: OUTCOME_AWARENESS / OUTCOME_ENGAGEMENT / OUTCOME_TRAFFIC / OUTCOME_SALES
 - Audience: [age range, locations, interests, custom audiences]
 - Budget: $[amount] daily or lifetime
 - Start/end: [dates]
@@ -137,19 +156,27 @@ Create a Meta ads campaign via the Marketing API:
 
 ### Dry run mode
 
-Meta's API supports `execution_options: { validate_only: true }` — Claude submits the full campaign payload for validation without creating anything.
+The CLI supports `--dry-run` on `create` and `update`. It prints the exact API request that would be sent and does **not** execute it, so nothing is created. This is a true no-op.
 
-```
-Create a Meta campaign for [audience] — validate only, don't launch yet.
+```bash
+meta-ads campaigns create \
+  --account-id act_XXXXXXXXXX \
+  --name "QA_Engagement_Jul2026" \
+  --objective OUTCOME_ENGAGEMENT \
+  --status PAUSED \
+  --daily-budget 1000 \
+  --dry-run
 ```
 
-Claude returns: full campaign JSON, API validation result, targeting reach estimate.
+Claude returns the request payload it would send. Drop `--dry-run` to actually create the (still PAUSED) objects.
 
 ### Delete after QA
 
-```python
-# Claude calls the API directly:
-DELETE /act_{ad_account_id}/campaigns?campaign_id={id}
+The CLI has no `delete` subcommand. Set status to `DELETED` via `update` (`--force` skips the destructive-change confirmation). Delete the ad set first, then the campaign:
+
+```bash
+meta-ads adsets update    --adset-id <ADSET_ID>       --status DELETED --force
+meta-ads campaigns update --campaign-id <CAMPAIGN_ID> --status DELETED --force
 ```
 
 ### Key settings Claude enforces
