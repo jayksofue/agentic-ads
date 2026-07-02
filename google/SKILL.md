@@ -24,30 +24,73 @@ Claude navigates Google Ads, creates a campaign, sets campaign type, bidding, au
 
 Google Ads also has a formal **Campaign Drafts** feature (under a live campaign → Drafts) — Claude can use this for testing changes to existing campaigns.
 
+### Campaign types and what changes per type
+
+| Campaign type | Unique wizard steps | Default bid strategy | Key unique fields |
+|---|---|---|---|
+| **Search** | Bidding → Campaign settings → AI Max → Keyword & asset gen → Keywords & ads → Budget → Review | Maximize Conversions | Keywords, ad copy (headlines + descriptions), Final URL |
+| **Video** | Subtype selection → Bidding → Campaign settings → Budget → Review | Maximize Conversions or CPV | YouTube video URL, audience targeting, ad format per subtype |
+| **Performance Max** | Asset groups → Audience signals → Budget → Review | Maximize Conversions | Asset group (images + logos + headlines + descriptions + videos + final URL) — no keywords |
+| **Display** | Bidding → Targeting → Budget → Review | Maximize Conversions | Image creative, responsive display ad assets |
+| **Demand Gen** | Bidding → Targeting → Budget → Review | Maximize Conversions | Image/video creative, runs on YouTube + Gmail + Discover |
+
+### Video campaign subtypes (unique to Video)
+
+After selecting Video campaign type, a **"Select a campaign subtype"** step appears:
+
+| Subtype | Ad formats | How you pay |
+|---|---|---|
+| **Video views** (default) | Skippable in-stream, in-feed, Shorts | Per view (TrueView — pay when viewer chooses to watch) |
+| **Efficient reach** | Bumper, skippable in-stream, in-feed, Shorts | CPM |
+| **Non-skippable reach** | Bumper, standard non-skippable, 30s non-skippable | CPM |
+| **Target frequency** | Bumper, skippable/non-skippable in-stream, in-feed, Shorts | CPM |
+| **Drive conversions** | Skippable in-stream + conversion-oriented formats | CPM |
+| **Ad sequence** | Mix of skippable, non-skippable, or bumper in sequence | CPM |
+| **Audio reach** | Audio ads on YouTube | CPM |
+| **YouTube subscriptions and engagements** (NEW) | Video engagement formats | Engagement-based |
+
 ### Key gotchas Claude handles
 
 | Issue | Fix |
 |---|---|
 | Smart campaigns prompt on account creation | Dismisses — uses Expert Mode |
 | "Optimize campaign" suggestions | Skips all auto-apply recommendations |
-| Display Network checked by default on Search | Unchecks under Networks settings |
+| Display Network checked by default on Search | Unchecks under Campaign settings → Networks |
 | Search Network partners on by default | Unchecks unless you want it |
+| **AI Max: Text customization ON by default** | Turns off under AI Max step — otherwise Google rewrites your ad copy dynamically from your website |
+| **AI Max: Final URL expansion ON by default** | Turns off under AI Max step — otherwise Google can redirect clicks to different pages on your site |
 | Broad match keywords by default | Wraps terms in `"quotes"` for phrase or `[brackets]` for exact unless you specify |
 | React inputs ignore `.value =` assignment | Uses nativeSetter pattern same as LinkedIn |
+| Budget defaults to Average daily | Switches to Campaign total if you specify a fixed amount |
+| "Save as a campaign draft?" modal on close | Three options: Cancel (stay on form), Discard (delete), Save (save as draft) — Claude clicks Discard after QA |
+| Customer acquisition: bids equally for new and existing by default | Leave as-is unless you explicitly want new-customer-only targeting |
+| Video subtype selection required | Must select correct subtype — default is Video views (TrueView); wrong subtype changes ad format and billing |
+| Conversion goals pre-populated from account defaults | Shows Sign-ups and Submit lead forms with warning icons — safe to proceed without changing these for QA |
 
 ### Campaign setup prompt
 
 ```
 Set up a Google Ads campaign in the UI — leave it Paused, don't publish.
-Campaign type: Search / Display / YouTube / Performance Max
+Campaign type: Search / Display / Video / Performance Max
 Goal: Awareness / Leads / Website traffic / Conversions
 Keywords or audience: [keyword list or audience description]
 Locations: [countries or cities]
-Budget: $[amount] daily
+Budget: $[amount] daily or total
 Bidding: Maximize clicks / Target CPA $[amount] / Manual CPC
 Ad copy: [headline 1, headline 2, headline 3 / descriptions — or ask Claude to generate]
 Final URL: [your landing page]
+AI Max: off (keeps exact ad copy and URL control)
+Display Network: off (Search campaigns only)
 ```
+
+For **Video** campaigns, also provide:
+- Video subtype (Video views / Efficient reach / Non-skippable reach / etc.)
+- YouTube video URL
+- Audience targeting (interests, keywords, demographics, custom segments)
+
+For **Performance Max** campaigns, provide:
+- Asset group: 3–5 headlines, 2 descriptions, 1+ image (1.91:1), 1+ square image (1:1), logo, final URL
+- Audience signals (optional — tells Google's AI who to start targeting)
 
 ### Delete after QA
 

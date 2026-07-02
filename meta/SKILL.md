@@ -22,25 +22,53 @@ Claude navigates Ads Manager, fills in campaign objective, audience, placements,
 - Activates only on your explicit confirmation
 - Can delete the draft campaign after QA if you ask
 
+### Objective-specific behavior
+
+| Objective | Modal on create | Campaign-level toggle | Ad Set: Conversion location default | Ad Set: blocker |
+|---|---|---|---|---|
+| **Engagement** | "Recommended setup" Advantage+ modal → dismiss OK | None | N/A | None |
+| **Traffic** | "Choose a campaign setup" → select Manual traffic campaign → Continue | None | Message destinations (switch to Website) | None |
+| **Leads** | "You no longer need to choose a campaign setup" info modal → OK | Advantage+ leads campaign ON | Instant forms | Must accept Lead Ads Terms of Service on the Facebook Page |
+| **Sales** | "Malfunctioning browser extension" may appear → dismiss OK | Advantage+ sales campaign ON | Website | Requires a Meta Pixel (Dataset) with conversion events set up |
+
 ### Key gotchas Claude handles
 
 | Issue | Fix |
 |---|---|
-| Audience Network on by default | Unchecks under Placements → Manual placements |
-| Detailed Targeting Expansion on by default | Unchecks before saving ad set |
+| Objective picker ignores coordinate clicks | Find `input[type="radio"]` inside `[role="row"]` and dispatch `mousedown + mouseup + click` events |
+| "Recommended setup" Advantage+ modal on load (Engagement) | Dismisses by clicking OK |
+| Traffic objective: "Message destinations" pre-selected | Switch to Website (or App/Calls) by dispatching mousedown+mouseup+click on the radio input |
+| Traffic objective: "Choose a campaign setup" modal | Select "Manual traffic campaign" radio → click Continue |
+| Audience Network on by default | **Engagement**: Placements → "Show more settings" → Placement controls → uncheck "Apps and sites". **Traffic/Sales (Advantage+ placements mode)**: no inline toggle — must switch to manual placements first via the ✎ icon |
+| Advantage+ audience | "Switch to original audience options" link appears at bottom of Audience section — click it to use manual targeting |
+| Dynamic creative deprecated | Meta removed the toggle — use up to 10 assets in a single image/video ad instead |
+| Ad Identity: Threads + WhatsApp fields | Traffic and Sales objectives show Threads profile and WhatsApp phone number fields in the Ad level Identity section — not present in Engagement |
+| WhatsApp Status placement included by default | Traffic/Website mode adds WhatsApp Status as a placement by default — cannot be removed inline in Advantage+ mode |
 | Budget type resets on objective change | Re-enters budget after any objective switch |
-| React inputs ignore `.value =` assignment | Uses nativeSetter pattern same as LinkedIn |
-| "Publish" vs "Save draft" | Always clicks Save draft until you confirm launch |
+| React inputs ignore `.value =` assignment | Uses nativeSetter pattern: `Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set` |
+| "Publish" vs draft | Campaign auto-saves as draft — only click Publish when you confirm launch |
+| Coordinate click scaling | Screenshot px ≈ CSS px × 0.61 (viewport is 2542 CSS px wide on a 1552px screenshot) |
+| "Malfunctioning browser extension" warning | Meta detects the Claude for Chrome extension — dismiss with OK, then continue normally |
+| Delete draft campaign | Navigate to campaign list → "Discard drafts" top-right (discards all unsaved changes in the account) |
+| Row-level `...` dropdown | Hover campaign row → last button (aria-label contains zero-width space: "Open Dropdown​") → shows Analyze / View history / Rules — no Delete option here |
+| Leads: Terms of Service blocker | Page owner must accept Facebook's Lead Generation Terms of Service before lead ads can run — Claude flags this and shows the "View terms" button |
+| Sales: Pixel required | Sales campaigns require a Dataset (Meta Pixel) with at least one conversion event configured — Claude shows "Set up conversion event" if none exist |
 
 ### Dry run prompt
 
 ```
-Set up a Meta campaign in Ads Manager — leave it Paused, don't publish.
-Objective: Engagement
-Audience: Finance decision-makers in the US, 30–55
-Budget: $500 lifetime, July 1–31
+Set up a Meta campaign in Ads Manager — leave it in draft, don't publish.
+Objective: Engagement / Traffic / Leads / Sales
+Audience: [description — age, location, interests]
+Budget: $[amount] daily or lifetime, [dates]
 Creative: [image URL or post URL]
 ```
+
+For **Sales** campaigns, also provide:
+- Pixel name (Meta will auto-select if only one exists)
+- Conversion event (Purchase, AddToCart, Lead, etc.)
+
+For **Leads** campaigns, confirm the Facebook Page has accepted Lead Generation Terms of Service first.
 
 ### Delete after QA
 

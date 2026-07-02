@@ -22,35 +22,58 @@ Claude navigates X Ads Manager, creates a campaign, sets objective, audience, bu
 - Activates only on your explicit confirmation
 - Can delete the paused campaign after QA if you ask
 
+### Objective-specific behavior
+
+| Objective | Ad Group: Optimization goal | Pay by | Ad level: unique fields |
+|---|---|---|---|
+| **Reach** | Impressions | Impressions (CPM) | Post text + Destination (Website/App) + media |
+| **Engagements** | Engagements | Engagements (CPE) | Post text + Destination (Website/App) + media |
+| **Website traffic** | Link clicks | Impressions (CPM) | Post text + **Website URL*** + **Headline*** + media (required for card ads) |
+| **Video views** | Video views | Video views | Post text + Destination (Website/App) + media |
+| **App installs** | App installs | App installs | Post text + app store link |
+| **Sales** | Conversions | Impressions (CPM) | Post text + Website URL + conversion event |
+
 ### Key gotchas Claude handles
 
 | Issue | Fix |
 |---|---|
-| "Tailored audiences" opt-in prompt on first visit | Dismisses — uses interest/keyword targeting instead unless you have a list |
+| React inputs ignore `.value =` assignment | Uses nativeSetter pattern: `Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set` |
+| "Optimize targeting" ON by default | Turn off for precise audience control — it's X's AI audience expansion (same as LinkedIn Audience Expansion) |
+| Website traffic: extra required ad fields | Must supply Website URL + Headline + media — it creates a "website card" format, not a plain post |
+| Website traffic: Dynamic Product Ads field | Appears at ad group level — toggle for e-commerce catalog ads; leave off for standard campaigns |
+| 4 specific placements available | Home timeline, Search results, Profiles, Replies — all on by default; use "Choose specific placements" to exclude any |
+| No third-party ad network | X ads are X-only; no equivalent of LinkedIn's LAN or Meta's Audience Network |
 | Budget type defaults to daily | Switches to total budget if you specify a fixed amount |
-| Tweet selection requires exact URL | Uses the post URL from your X profile or a promoted-only tweet |
-| Promoted-only tweet not visible on timeline | Expected — it's ad-only by design |
-| React inputs ignore `.value =` assignment | Uses nativeSetter pattern same as LinkedIn |
+| "Use existing post" picker | Shows Organic and Promoted-only tabs — can reuse any past ad creative with Clone & edit or Use as-is |
+| Campaign name uses timestamp default | Use nativeSetter pattern to rename — keyboard input doesn't update React-controlled value |
+| Delete draft campaign | Hover campaign row → red trash icon → "Delete this campaign?" → confirm Delete |
+| Save draft without ad content | Go to Review and launch → Save draft — works even if ad has errors (blocked from Publish only) |
+| Promote-only tweet not visible on timeline | Expected — it's ad-only by design |
 
 ### Campaign setup prompt
 
 ```
-Set up an X campaign in Ads Manager — leave it Paused, don't launch.
-Objective: Engagement / Awareness / Website clicks / Followers
-Tweet to promote: [tweet URL or "create a new promoted-only post"]
-Audience: [keywords, interests, follower lookalikes of @handle, demographics]
-Locations: [countries]
+Set up an X campaign in Ads Manager — leave it as draft, don't launch.
+Objective: Reach / Engagements / Website traffic / Video views / App installs / Sales
+Post: [tweet URL or "write new promoted-only post: [copy here]"]
+Audience: [keywords, interests, follower lookalikes of @handle, demographics, locations]
 Budget: $[amount] total or daily
 Start/end: [dates]
+Optimize targeting: off
 ```
+
+For **Website traffic**, also provide:
+- Website URL (required)
+- Headline (required)
+- Creative image or video
 
 ### Delete after QA
 
 ```
-Delete the paused X campaign we just created — campaign name: [name]
+Delete the draft X campaign we just created — campaign name: [name]
 ```
 
-Claude navigates to the campaign list, selects it, and deletes it.
+Claude hovers the campaign row, clicks the red trash icon, and confirms Delete.
 
 ---
 

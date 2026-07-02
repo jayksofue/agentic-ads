@@ -74,8 +74,8 @@ Claude uses platform-specific methods per ad network:
 
 - **LinkedIn**: Drives Campaign Manager via browser using the `nativeSetter` pattern for React inputs. Handles LAN, Audience Expansion, date pickers, and format selection automatically.
 - **Meta**: Connects via the Meta MCP to call the Marketing API directly. No UI.
-- **X**: Calls the X Ads API with OAuth 1.0a. Previews payload before any call.
-- **Google**: Uses the Google Ads Python client library. Validates before submitting.
+- **X**: Drives Ads Manager via browser. Handles objective-specific ad formats (website card for traffic, standard post for reach/engagements/video). Turns off Optimize Targeting by default.
+- **Google**: Drives Google Ads via browser. Handles campaign type selection, Video subtypes, turns off Display Network and AI Max (Final URL expansion + Text customization) by default.
 
 ## License
 
