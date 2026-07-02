@@ -96,6 +96,21 @@ If you want to cap what you pay per engagement, you can set a **Manual CPC/CPM b
 
 ---
 
+## Ad copy
+
+Before attaching a creative, Claude checks or generates copy. See [copy/SKILL.md](../copy/SKILL.md) for the full process.
+
+**If you have copy:** paste it in the prompt — Claude checks it for slop and character limits before proceeding.
+
+**If you don't have copy:** Claude generates 2–3 variants using the StoryBrand framework (problem → solution → CTA), runs the anti-slop check, and presents the cleanest option for your approval before attaching.
+
+LinkedIn character limits:
+- Intro text: 150 chars
+- Headline: 70 chars
+- CTA button: 44 chars
+
+---
+
 ## Campaign setup prompt
 
 Once you know your answers, paste a prompt like:

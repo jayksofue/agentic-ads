@@ -42,6 +42,7 @@ This skill drives ad platform UIs directly in your browser. The extension is req
 - [Meta →](./meta/SKILL.md)
 - [X →](./x/SKILL.md)
 - [Google →](./google/SKILL.md)
+- [Copy generation + anti-slop →](./copy/SKILL.md)
 
 ## Dry run mode
 
