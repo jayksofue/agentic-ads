@@ -109,10 +109,22 @@ Claude calls the API directly — faster for bulk setup, no UI interaction.
 
 3. **Ad Account ID** — format: `act_XXXXXXXXXX`
 
+### What Claude does via API
+
+Claude calls the Marketing API to create campaign + ad set in one shot, both set to PAUSED. The structure matches what you'd see in Ads Manager:
+- Campaign: objective, name, status = PAUSED, budget
+- Ad Set: targeting, optimization goal, billing event, Advantage+ Audience disabled, Dynamic Creative off
+
+**Key API behaviors (verified Jul 2026):**
+- Budget is passed in **cents** — `$10 daily = 1000`
+- `validate_only: true` does NOT prevent creation — Meta ignores it and creates the objects anyway. Campaign and ad set come back PAUSED so nothing spends, but they are real objects that need to be deleted after QA
+- Advantage+ Audience: **disabled by default** via API (opposite of browser default — no extra step needed)
+- Dynamic Creative: **off by default** via API
+
 ### Campaign setup prompt
 
 ```
-Create a Meta ads campaign:
+Create a Meta ads campaign via the Marketing API:
 - Ad account: act_[your account ID]
 - Objective: AWARENESS / ENGAGEMENT / TRAFFIC / CONVERSIONS
 - Audience: [age range, locations, interests, custom audiences]
