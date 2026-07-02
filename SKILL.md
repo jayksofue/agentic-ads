@@ -1,0 +1,60 @@
+# Agentic Ads — Claude Code Skill
+
+Deploy LinkedIn, Meta, X, and Google ads from a single prompt. No platform expertise required.
+
+## What this skill does
+
+You describe the campaign. Claude handles targeting, placements, budgets, creative attachment, and launch — across any supported platform.
+
+## Supported platforms
+
+| Platform | Method | Status |
+|---|---|---|
+| LinkedIn | Browser automation (Campaign Manager) | ✅ Production-ready |
+| Meta | Meta MCP / Marketing API | ✅ Dry-run + launch |
+| X (Twitter) | X Ads API | ✅ Dry-run + launch |
+| Google | Google Ads API | ✅ Dry-run + launch |
+
+## Quickstart
+
+1. Open Claude Code
+2. Say: **"Run the agentic-ads skill"**
+3. Claude will ask:
+   - Which platform?
+   - What ad format? (awareness / engagement / conversion / document)
+   - Who's the audience?
+   - What's the budget and date range?
+4. Claude builds, previews, and (with your confirmation) launches
+
+## Platform setup guides
+
+- [LinkedIn →](./linkedin/SKILL.md)
+- [Meta →](./meta/SKILL.md)
+- [X →](./x/SKILL.md)
+- [Google →](./google/SKILL.md)
+
+## Dry run mode
+
+Every platform supports a preview/validate step before any money is spent. See [dry-run.md](./dry-run.md).
+
+## Real-world results
+
+Deployed at [Eco](https://eco.com) — 3 ad sets across US/CA/AU, Singapore, and UK launched in one session.
+CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10x).
+
+## Prompt examples
+
+```
+Launch a document ad on LinkedIn targeting CFOs and treasurers in financial services.
+$500 lifetime budget. July 1–31. LAN off. Audience expansion off.
+```
+
+```
+Create a Meta awareness campaign for fintech decision-makers in the US.
+$1,000 monthly budget. Use the creative at [URL]. Dry run first.
+```
+
+```
+Deploy an X engagement campaign targeting crypto and DeFi audiences.
+$300 budget. Show me the payload before launching.
+```
