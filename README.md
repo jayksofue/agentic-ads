@@ -25,8 +25,8 @@ Deployed at [Eco](https://eco.com):
 |---|---|---|
 | **LinkedIn** | Browser automation (Campaign Manager) | Draft mode |
 | **Meta** | Marketing API via MCP | `validate_only: true` |
-| **X** | X Ads API | Payload preview |
-| **Google** | Google Ads API | `validate_only: true` |
+| **X** | X Ads API (requires approval) or browser | Payload preview |
+| **Google** | Google Ads API (requires approval) or browser | `validate_only: true` |
 
 ## Platform guides
 

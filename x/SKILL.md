@@ -4,10 +4,14 @@ Claude connects to the X Ads API to create and launch promoted post campaigns.
 
 ## Prerequisites
 
-1. **X Ads API access**
+1. **X Ads API access (requires approval)**
 
-   Apply at developer.x.com → Products → X Ads API. You need:
-   - A developer app with Ads API access
+   The X Ads API is free once approved but requires a separate application from general X API access. Apply at [ads.x.com/help](https://ads.x.com/help). Approval typically takes weeks and is not guaranteed.
+
+   > **No API access yet?** Claude can still drive the X Ads UI via browser automation — same pattern as the LinkedIn skill. Just say "use browser mode" when starting.
+
+   Once approved, you'll need:
+   - A developer app with Ads API (Standard Access) enabled
    - `TWITTER_ADS_ACCOUNT_ID` (find in ads.x.com, in the URL)
    - Consumer key/secret + access token/secret
 

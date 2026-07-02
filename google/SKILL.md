@@ -4,10 +4,15 @@ Claude connects to the Google Ads API to create search, display, and YouTube cam
 
 ## Prerequisites
 
-1. **Google Ads API access**
+1. **Google Ads API access (requires application)**
 
+   A developer token is required and must be applied for from a Google Ads Manager (MCC) account. Basic Access is granted automatically; Standard Access (unlimited operations) requires a separate review. As of 2026, Google has a backlog — expect delays.
+
+   > **No developer token yet?** Claude can drive the Google Ads UI via browser automation while you wait for API access. Just say "use browser mode."
+
+   Once you have access:
    - A Google Ads Manager account (MCC)
-   - Developer token (apply at developers.google.com/google-ads/api/docs/get-started/dev-token)
+   - Developer token from API Center in your MCC
    - OAuth2 credentials (client ID + secret from Google Cloud Console)
    - `GOOGLE_ADS_CUSTOMER_ID` — your 10-digit account ID (no dashes)
 
