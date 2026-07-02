@@ -1,8 +1,62 @@
 # Meta Ads — Skill
 
-Claude connects to Meta's Marketing API via the Meta MCP. No browser automation needed — Claude calls the API directly.
+Claude can run Meta campaigns two ways — via the Marketing API (no UI needed) or via browser automation (no API setup needed). Both support draft/paused mode so you can review before spending.
 
-## Prerequisites
+---
+
+## Method 1: Browser automation (no API required)
+
+Same pattern as the LinkedIn skill — Claude drives Meta Ads Manager directly in Chrome.
+
+### Prerequisites
+
+1. **Claude for Chrome extension** — install from the Chrome Web Store, enable under Claude Code Settings → MCP → Browser
+2. Log into [Meta Ads Manager](https://adsmanager.facebook.com) in Chrome before starting
+3. Your Ad Account ID — found in the URL: `act_XXXXXXXXXX`
+
+### What Claude does
+
+Claude navigates Ads Manager, fills in campaign objective, audience, placements, budget, and creative. Before activating, it:
+- Sets campaign status to **Paused** (draft equivalent — won't serve)
+- Shows you a summary for review
+- Activates only on your explicit confirmation
+- Can delete the draft campaign after QA if you ask
+
+### Key gotchas Claude handles
+
+| Issue | Fix |
+|---|---|
+| Audience Network on by default | Unchecks under Placements → Manual placements |
+| Detailed Targeting Expansion on by default | Unchecks before saving ad set |
+| Budget type resets on objective change | Re-enters budget after any objective switch |
+| React inputs ignore `.value =` assignment | Uses nativeSetter pattern same as LinkedIn |
+| "Publish" vs "Save draft" | Always clicks Save draft until you confirm launch |
+
+### Dry run prompt
+
+```
+Set up a Meta campaign in Ads Manager — leave it Paused, don't publish.
+Objective: Engagement
+Audience: Finance decision-makers in the US, 30–55
+Budget: $500 lifetime, July 1–31
+Creative: [image URL or post URL]
+```
+
+### Delete after QA
+
+```
+Delete the draft Meta campaign we just created — campaign name: [name]
+```
+
+Claude navigates to the campaign, selects it, and deletes it from the campaign list.
+
+---
+
+## Method 2: Marketing API via Meta MCP
+
+Claude calls the API directly — faster for bulk setup, no UI interaction.
+
+### Prerequisites
 
 1. **Install the Meta MCP**
 
@@ -23,15 +77,11 @@ Claude connects to Meta's Marketing API via the Meta MCP. No browser automation 
    }
    ```
 
-2. **Authenticate**
+2. **Authenticate** — on first run, Claude prompts you to connect your Meta Business account via OAuth. Approve in the Meta dialog — Claude never sees your password.
 
-   On first run, Claude will prompt you to connect your Meta Business account via OAuth. Approve in the Meta dialog — Claude never sees your password.
+3. **Ad Account ID** — format: `act_XXXXXXXXXX`
 
-3. **Get your Ad Account ID**
-
-   Found in Meta Business Manager → Business Settings → Ad Accounts. Format: `act_XXXXXXXXXX`
-
-## Campaign setup prompt
+### Campaign setup prompt
 
 ```
 Create a Meta ads campaign:
@@ -45,26 +95,31 @@ Create a Meta ads campaign:
 - Dry run: yes/no
 ```
 
-## Dry run mode
+### Dry run mode
 
-Meta's API supports `execution_options: { validate_only: true }` — Claude submits the full campaign payload for validation without creating anything or spending budget.
+Meta's API supports `execution_options: { validate_only: true }` — Claude submits the full campaign payload for validation without creating anything.
 
 ```
 Create a Meta campaign for [audience] — validate only, don't launch yet.
 ```
 
-Claude returns:
-- Full campaign JSON that would be submitted
-- API validation result (errors caught before launch)
-- Summary of targeting reach estimate
+Claude returns: full campaign JSON, API validation result, targeting reach estimate.
 
-## Key settings Claude enforces
+### Delete after QA
 
-- `special_ad_categories: []` — required if your ad is NOT in housing/credit/employment
+```python
+# Claude calls the API directly:
+DELETE /act_{ad_account_id}/campaigns?campaign_id={id}
+```
+
+### Key settings Claude enforces
+
+- `special_ad_categories: []` — required if your ad is not in housing/credit/employment
 - Audience Network placement: excluded by default (same as LAN off on LinkedIn)
 - `bid_strategy: LOWEST_COST_WITHOUT_CAP` unless you specify a target CPA
+- Campaign status: `PAUSED` until you explicitly confirm launch
 
-## Scaling: multiple ad sets
+### Scaling: multiple ad sets
 
 ```
 Create 3 Meta ad sets under campaign [ID]:

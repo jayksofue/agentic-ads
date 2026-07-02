@@ -1,38 +1,92 @@
 # Google Ads — Skill
 
-Claude connects to the Google Ads API to create search, display, and YouTube campaigns.
+Claude can run Google campaigns two ways — via browser automation (works today, no API approval needed) or via the Google Ads API (requires a developer token). Both support draft/paused mode.
 
-## Prerequisites
+---
 
-1. **Google Ads API access (requires application)**
+## Method 1: Browser automation (no API required)
 
-   A developer token is required and must be applied for from a Google Ads Manager (MCC) account. Basic Access is granted automatically; Standard Access (unlimited operations) requires a separate review. As of 2026, Google has a backlog — expect delays.
+Claude drives [ads.google.com](https://ads.google.com) directly in Chrome — same pattern as the LinkedIn skill.
 
-   > **No developer token yet?** Claude can drive the Google Ads UI via browser automation while you wait for API access. Just say "use browser mode."
+### Prerequisites
 
-   Once you have access:
-   - A Google Ads Manager account (MCC)
-   - Developer token from API Center in your MCC
-   - OAuth2 credentials (client ID + secret from Google Cloud Console)
-   - `GOOGLE_ADS_CUSTOMER_ID` — your 10-digit account ID (no dashes)
+1. **Claude for Chrome extension** — install from the Chrome Web Store, enable under Claude Code Settings → MCP → Browser
+2. Log into [Google Ads](https://ads.google.com) in Chrome before starting
+3. Your Customer ID — 10-digit number shown in the top right of Google Ads (format: XXX-XXX-XXXX)
 
-2. **Install the Google Ads client library**:
+### What Claude does
 
-   ```bash
-   pip install google-ads
-   ```
+Claude navigates Google Ads, creates a campaign, sets campaign type, bidding, audience or keywords, budget, and ad copy. Before activating, it:
+- Sets campaign status to **Paused** (won't serve, won't spend)
+- Shows you a summary for review
+- Activates only on your explicit confirmation
+- Can delete the paused campaign after QA if you ask
 
-3. **Set up `google-ads.yaml`**:
+Google Ads also has a formal **Campaign Drafts** feature (under a live campaign → Drafts) — Claude can use this for testing changes to existing campaigns.
 
-   ```yaml
-   developer_token: YOUR_DEVELOPER_TOKEN
-   client_id: YOUR_CLIENT_ID
-   client_secret: YOUR_CLIENT_SECRET
-   refresh_token: YOUR_REFRESH_TOKEN
-   login_customer_id: YOUR_MCC_ID
-   ```
+### Key gotchas Claude handles
 
-## Campaign setup prompt
+| Issue | Fix |
+|---|---|
+| Smart campaigns prompt on account creation | Dismisses — uses Expert Mode |
+| "Optimize campaign" suggestions | Skips all auto-apply recommendations |
+| Display Network checked by default on Search | Unchecks under Networks settings |
+| Search Network partners on by default | Unchecks unless you want it |
+| Broad match keywords by default | Wraps terms in `"quotes"` for phrase or `[brackets]` for exact unless you specify |
+| React inputs ignore `.value =` assignment | Uses nativeSetter pattern same as LinkedIn |
+
+### Campaign setup prompt
+
+```
+Set up a Google Ads campaign in the UI — leave it Paused, don't publish.
+Campaign type: Search / Display / YouTube / Performance Max
+Goal: Awareness / Leads / Website traffic / Conversions
+Keywords or audience: [keyword list or audience description]
+Locations: [countries or cities]
+Budget: $[amount] daily
+Bidding: Maximize clicks / Target CPA $[amount] / Manual CPC
+Ad copy: [headline 1, headline 2, headline 3 / descriptions — or ask Claude to generate]
+Final URL: [your landing page]
+```
+
+### Delete after QA
+
+```
+Delete the paused Google Ads campaign we just created — campaign name: [name]
+```
+
+Claude navigates to the campaign, selects it, and removes it.
+
+---
+
+## Method 2: Google Ads API
+
+Requires a developer token from a Google Ads Manager (MCC) account. Basic Access is granted automatically; Standard Access (for production scale) requires a separate review. As of 2026, Google has a backlog on developer token applications.
+
+### Prerequisites
+
+- Google Ads Manager account (MCC)
+- Developer token from API Center in your MCC
+- OAuth2 credentials (client ID + secret from Google Cloud Console)
+- `GOOGLE_ADS_CUSTOMER_ID` — 10-digit account ID without dashes
+
+Install the client library:
+
+```bash
+pip install google-ads
+```
+
+Set up `google-ads.yaml`:
+
+```yaml
+developer_token: YOUR_DEVELOPER_TOKEN
+client_id: YOUR_CLIENT_ID
+client_secret: YOUR_CLIENT_SECRET
+refresh_token: YOUR_REFRESH_TOKEN
+login_customer_id: YOUR_MCC_ID
+```
+
+### Campaign setup prompt
 
 ```
 Create a Google Ads campaign:
@@ -47,7 +101,7 @@ Create a Google Ads campaign:
 - Dry run: yes/no
 ```
 
-## Dry run mode
+### Dry run mode
 
 Google Ads API supports `validate_only: true` on mutate operations — Claude sends the full campaign structure for validation without creating anything.
 
@@ -55,23 +109,19 @@ Google Ads API supports `validate_only: true` on mutate operations — Claude se
 Create a Google Search campaign for [audience] — validate only, don't submit.
 ```
 
-Claude returns:
-- Full mutate request payload
-- API validation result (policy checks, character limits, targeting conflicts)
-- Estimated weekly impressions based on keyword planner data
-- Explicit confirmation required before live submission
+Claude returns: full mutate request payload, API validation result (policy checks, character limits, targeting conflicts), estimated weekly impressions.
 
-## Ad types by campaign goal
+### Delete after QA
 
-| Goal | Recommended type | What Claude builds |
-|---|---|---|
-| B2B awareness | Display / YouTube | Responsive display ad + targeting |
-| Lead gen | Search | Responsive search ad + keyword list |
-| Retargeting | Display / PMax | Audience list + creative assets |
-| App installs | App campaign | App ID + creative assets |
+```
+Delete the Google Ads campaign with resource name [campaigns/XXXXXXXXX]
+```
 
-## Key settings Claude enforces
+Claude calls the CampaignService remove operation.
+
+### Key settings Claude enforces
 
 - `network_settings.target_search_network: true`, `target_content_network: false` for Search (no Display Network bleed)
-- Ad rotation: `OPTIMIZE` (Google's default, best for performance)
-- Conversion tracking: Claude will warn if no conversion action is configured before launching a conversion-goal campaign
+- Ad rotation: `OPTIMIZE`
+- Campaign status: `PAUSED` until you explicitly confirm launch
+- Conversion tracking: Claude warns if no conversion action is configured before launching a conversion-goal campaign

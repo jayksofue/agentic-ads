@@ -33,10 +33,10 @@ This skill drives ad platform UIs directly in your browser. Install it first.
 
 | Platform | Method | Dry run |
 |---|---|---|
-| **LinkedIn** | Browser automation (Campaign Manager) | Draft mode |
-| **Meta** | Marketing API via MCP | `validate_only: true` |
-| **X** | X Ads API (requires approval) or browser | Payload preview |
-| **Google** | Google Ads API (requires approval) or browser | `validate_only: true` |
+| **LinkedIn** | Browser automation (Campaign Manager) | Draft status |
+| **Meta** | Browser automation or Marketing API via MCP | Paused campaign |
+| **X** | Browser automation or X Ads API (requires approval) | Paused campaign |
+| **Google** | Browser automation or Google Ads API (requires approval) | Paused campaign / Campaign Drafts |
 
 ## Platform guides
 
