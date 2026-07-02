@@ -121,9 +121,12 @@ Launch a LinkedIn sponsored content campaign:
 |---|---|
 | LinkedIn Audience Network on by default | Unchecks after every new ad set creation |
 | Audience Expansion on by default | Unchecks after every format change or new ad set |
-| Ad format change creates a new ad set | Renames, re-sets budget and placements on the new one |
+| Ad format change creates a new ad set | Renames, re-sets budget, placements, AND re-adds all audience attributes on the new one |
+| Audience attributes below the fold | Scroll down past the language setting on the details page before clicking Next — Job Function/Seniority/Interests are in the same section as locations |
+| "C-Suite" not found | LinkedIn's seniority label is "CXO" — use that instead |
 | Calendar shows wrong month after typing date | Clicks nav arrow to correct month, then clicks the date |
 | "Save objective" dialog on Next | Clicks Save to confirm |
+| Inner panel won't scroll with mouse | Use JS `document.querySelector('._container_x5gf48').scrollTop += 400` to scroll the content panel |
 
 ---
 
