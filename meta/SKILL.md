@@ -84,8 +84,10 @@ Claude navigates to the campaign, selects it, and deletes it from the campaign l
 
 Claude calls the Marketing API through the `meta-ads` command-line tool. Faster for bulk setup, no UI interaction.
 
-> **QA status (2026-07-02): NOT confirmed from claude.ai.**
-> The live dry-run → create-paused → delete cycle could not be run in a non-interactive claude.ai session, because no `META_ACCESS_TOKEN` is available there to authenticate against Meta. The commands below are verified against the real `meta-ads` CLI v0.18.1 `--help` output, but the end-to-end API round-trip has only been exercised from a terminal with a configured token, not from claude.ai. A non-interactive session cannot complete the OAuth/token step on its own.
+> **QA status (2026-07-04): ✅ CONFIRMED end-to-end from claude.ai.**
+> Ran the full dry-run → create-paused → verify → delete cycle live against ad account `act_15495450` (Engagement objective, US, age 25–45, "Financial technology" interest, $10/day). Campaign `52513568511696` and ad set `52513568917696` were created PAUSED, verified, then set to DELETED. Nothing ever served or spent.
+>
+> This works from a claude.ai session **only after the CLI is authenticated once from a terminal** (`meta-ads auth login --token …`). The login persists to `~/.config/meta-ads-cli/config.json`, and the session's shell commands then pick it up automatically. A claude.ai session cannot perform that initial token/OAuth step itself.
 >
 > Earlier drafts of this section referenced `@anthropic-ai/mcp-server-meta` and `cli-meta-ads`. Neither exists on npm anymore (`@anthropic-ai/mcp-server-meta` returns 404; `cli-meta-ads` was unpublished 2026-05-28). Use the `meta-ads` package instead.
 
@@ -139,6 +141,8 @@ meta-ads campaigns create \
 - `--status` defaults to `PAUSED` on create, so nothing serves until you flip it to `ACTIVE`.
 - `--dry-run` prints the exact request without executing it, so nothing is created (see below).
 - Advantage+ Audience and Dynamic Creative are controlled through the ad set targeting/creative spec, not campaign flags. Do not assume a default; set them explicitly and re-read with `meta-ads adsets get` to confirm.
+- **Ad set gotcha (hit during QA):** if the campaign has no explicit bid strategy, Meta may require a bid cap on the ad set. If `adsets create` returns `Invalid parameter` (subcode `1815857`, "Bid Amount Required For The Bid Strategy Provided"), add `--bid-amount <cents>` (e.g. `--bid-amount 500` = $5 cap). The CLI reports only "Invalid parameter"; the detailed reason comes from a raw Graph API call.
+- Disable Advantage+ audience expansion in the targeting JSON with `"targeting_automation":{"advantage_audience":0}` (confirmed accepted by the ad set create).
 
 ### Campaign setup prompt
 
