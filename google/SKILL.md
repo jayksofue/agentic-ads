@@ -72,6 +72,7 @@ After selecting Video campaign type, a **"Select a campaign subtype"** step appe
 | Customer acquisition: bids equally for new and existing by default | Leave as-is unless you explicitly want new-customer-only targeting |
 | Video subtype selection required | Must select correct subtype — default is Video views (TrueView); wrong subtype changes ad format and billing |
 | Conversion goals pre-populated from account defaults | Shows Sign-ups and Submit lead forms with warning icons — safe to proceed without changing these for QA |
+| **Publish triggers "Confirm it's you" step-up auth** | On some accounts, clicking Publish opens a Google "Confirm it's you" identity-verification modal (password / 2FA / device check). An automated agent cannot and must not complete this — it is an authentication gate. The human operator must publish, or complete the verification, themselves. Verified 2026-07-09. |
 
 ### Campaign setup prompt
 
