@@ -2,7 +2,11 @@
 
 Claude can run Google campaigns two ways — via browser automation (works today, no API approval needed) or via the Google Ads API (requires a developer token). Both support draft/paused mode.
 
-> **QA status (2026-07-09): ⚠️ Not verified — blocked by account state.** A live browser QA was attempted. The Google Ads account reachable in the session ("Pump The Beat") was **suspended and canceled**, which disables the "New campaign" button, so the create→delete cycle could not be run. This is an account-state blocker, not a flow defect. To verify, re-run against an active, in-good-standing Google Ads account. The API path (Method 2) is also unverified here — no developer token configured, and Standard Access is approval-gated with a noted backlog.
+> **QA status (2026-07-09): ✅ Create/draft flow verified; ⚠️ draft deletion is a known gap.** Ran live on the active **Eco 2025** account (237-467-3790): created a Search campaign via "Create a campaign without guidance" → named it (nativeSetter) → the documented "Save as a campaign draft?" modal appeared → Saved → the draft persisted and was confirmed in the campaigns table under "Drafts in progress" with a real campaign ID. Nothing served or spent.
+>
+> **Important cleanup finding:** once a "draft in progress" is **saved**, it has **no delete control in the campaigns UI** — no inline trash on the row, no actions column, the bulk **Edit is disabled** for drafts, the builder has no delete button, and auto-save means clicking the close (X) no longer prompts the Save/Discard modal. So for QA, **click Discard in the exit modal instead of Save** (the documented cleanup) — do NOT Save the draft. To remove an already-saved draft, use Google Ads Editor / the API, or finish+publish it as a PAUSED campaign (real campaigns do expose a Remove status control) and then remove it.
+>
+> First attempt hit a different account ("Pump The Beat") that was suspended/canceled, which disables "New campaign" entirely — switch accounts via the account selector. Method 2 (Google Ads API) remains unverified: no developer token configured, and Standard Access is approval-gated.
 
 ---
 
@@ -96,11 +100,13 @@ For **Performance Max** campaigns, provide:
 
 ### Delete after QA
 
-```
-Delete the paused Google Ads campaign we just created — campaign name: [name]
-```
+For a **published** (paused) campaign, Claude navigates to it, selects it, and sets status to Removed via the status control — real campaigns expose this.
 
-Claude navigates to the campaign, selects it, and removes it.
+For a **draft in progress** (built but never published), there is no delete in the campaigns UI (verified 2026-07-09). The correct move is to **not save it**: click **Discard** in the "Save as a campaign draft?" modal on exit. If a draft was already saved, remove it with Google Ads Editor or the API, or finish+publish it paused and then remove it.
+
+```
+For QA: build the campaign, review it, then Discard on exit (don't Save the draft).
+```
 
 ---
 
