@@ -1,6 +1,6 @@
 # Agentic Ads
 
-Deploy LinkedIn, Meta, X, and Google ads with a single Claude Code prompt.
+Deploy LinkedIn, Meta, X, Google, and Reddit ads with a single Claude Code prompt.
 
 No platform expertise required. You define the audience and budget. Claude handles targeting, placements, creative attachment, and launch.
 
@@ -34,9 +34,10 @@ This skill drives ad platform UIs directly in your browser. Install it first.
 | Platform | Method | Dry run |
 |---|---|---|
 | **LinkedIn** | Browser automation (Campaign Manager) | Draft status |
-| **Meta** | Browser automation or Marketing API via MCP | Paused campaign |
+| **Meta** | `meta-ads` CLI (Marketing API) — verified end-to-end | `--dry-run` + paused campaign |
 | **X** | Browser automation or X Ads API (requires approval) | Paused campaign |
 | **Google** | Browser automation or Google Ads API (requires approval) | Paused campaign / Campaign Drafts |
+| **Reddit** | Browser automation or Reddit Ads API | Paused campaign |
 
 ## Platform guides
 
@@ -44,6 +45,7 @@ This skill drives ad platform UIs directly in your browser. Install it first.
 - [Meta setup →](./meta/SKILL.md)
 - [X setup →](./x/SKILL.md)
 - [Google setup →](./google/SKILL.md)
+- [Reddit setup →](./reddit/SKILL.md)
 - [Dry run guide →](./dry-run.md)
 
 ## Example prompts
@@ -73,7 +75,7 @@ $50/day. Target CPA: $15. Validate only — don't submit yet.
 Claude uses platform-specific methods per ad network:
 
 - **LinkedIn**: Drives Campaign Manager via browser using the `nativeSetter` pattern for React inputs. Handles LAN, Audience Expansion, date pickers, and format selection automatically.
-- **Meta**: Connects via the Meta MCP to call the Marketing API directly. No UI.
+- **Meta**: Calls the Marketing API directly through the `meta-ads` CLI. No UI. Verified end-to-end (create→delete) on 2026-07-04.
 - **X**: Drives Ads Manager via browser. Handles objective-specific ad formats (website card for traffic, standard post for reach/engagements/video). Turns off Optimize Targeting by default.
 - **Google**: Drives Google Ads via browser. Handles campaign type selection, Video subtypes, turns off Display Network and AI Max (Final URL expansion + Text customization) by default.
 

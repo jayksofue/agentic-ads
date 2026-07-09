@@ -1,6 +1,6 @@
 # Agentic Ads — Claude Code Skill
 
-Deploy LinkedIn, Meta, X, and Google ads from a single prompt. No platform expertise required.
+Deploy LinkedIn, Meta, X, Google, and Reddit ads from a single prompt. No platform expertise required.
 
 ## What this skill does
 
@@ -10,10 +10,13 @@ You describe the campaign. Claude handles targeting, placements, budgets, creati
 
 | Platform | Method | Status |
 |---|---|---|
-| LinkedIn | Browser automation (Campaign Manager) | ✅ Production-ready |
-| Meta | Meta MCP / Marketing API | ✅ Dry-run + launch |
-| X (Twitter) | X Ads API | ✅ Dry-run + launch |
-| Google | Google Ads API | ✅ Dry-run + launch |
+| LinkedIn | Browser automation (Campaign Manager) | ✅ Production-ready (live launches at Eco) |
+| Meta | `meta-ads` CLI (Marketing API) | ✅ Verified end-to-end 2026-07-04 (live create→delete) |
+| X (Twitter) | Browser automation or X Ads API | 📝 Documented — API QA pending (Ads API approval-gated) |
+| Google | Browser automation or Google Ads API | 📝 Documented — API QA pending (developer token approval-gated) |
+| Reddit | Browser automation or Reddit Ads API | 🚧 New — see reddit/ |
+
+> **Verification legend:** ✅ = live create→delete cycle run and confirmed. 📝 = commands/UI steps documented but not yet exercised end-to-end from this environment (blocked on API credentials that require platform approval). Browser-automation paths depend on the Claude for Chrome extension being logged into each platform.
 
 ## Quickstart
 
@@ -42,6 +45,7 @@ This skill drives ad platform UIs directly in your browser. The extension is req
 - [Meta →](./meta/SKILL.md)
 - [X →](./x/SKILL.md)
 - [Google →](./google/SKILL.md)
+- [Reddit →](./reddit/SKILL.md)
 - [Copy generation + anti-slop →](./copy/SKILL.md)
 
 ## Dry run mode
