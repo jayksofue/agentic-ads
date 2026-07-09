@@ -2,6 +2,8 @@
 
 Claude can run X campaigns two ways — via browser automation (works today, no API approval needed) or via the X Ads API (requires separate approval). Both support paused/draft mode.
 
+> **QA status (2026-07-09): ✅ Method 1 (browser) verified end-to-end.** Ran the full cycle live on account `18ce54of0a1`: create campaign (Reach) → ad group targeting → Save draft → confirmed in the campaign list as `Draft` → deleted. Two behaviors were refined during QA (see the gotchas table): Save draft only persists from **Review and launch**, and the delete control is an **inline trash icon next to the campaign ID** on row hover. Method 2 (X Ads API) is still 📝 documented-only — no Ads API credentials configured, and access is approval-gated (typically weeks).
+
 ---
 
 ## Method 1: Browser automation (no API required)
@@ -46,8 +48,8 @@ Claude navigates X Ads Manager, creates a campaign, sets objective, audience, bu
 | Budget type defaults to daily | Switches to total budget if you specify a fixed amount |
 | "Use existing post" picker | Shows Organic and Promoted-only tabs — can reuse any past ad creative with Clone & edit or Use as-is |
 | Campaign name uses timestamp default | Use nativeSetter pattern to rename — keyboard input doesn't update React-controlled value |
-| Delete draft campaign | Hover campaign row → red trash icon → "Delete this campaign?" → confirm Delete |
-| Save draft without ad content | Go to Review and launch → Save draft — works even if ad has errors (blocked from Publish only) |
+| Delete draft campaign | Hover the campaign row → **inline red trash icon in the edit/duplicate/delete cluster next to the campaign ID** (not at the far right of the row) → "Delete this campaign?" modal → Delete. Verified 2026-07-09. |
+| Save draft without ad content | Must be done from **Review and launch** → Save draft — works even with a publish-blocking ad error ("Post must have text or media"). **Clicking Save draft on the ad-group Details step does NOT persist a server campaign** — it only keeps a local unsaved draft (recovered via an "unsaved draft" modal on re-entry). Verified 2026-07-09. |
 | Promote-only tweet not visible on timeline | Expected — it's ad-only by design |
 
 ### Campaign setup prompt

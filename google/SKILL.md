@@ -2,6 +2,8 @@
 
 Claude can run Google campaigns two ways — via browser automation (works today, no API approval needed) or via the Google Ads API (requires a developer token). Both support draft/paused mode.
 
+> **QA status (2026-07-09): ⚠️ Not verified — blocked by account state.** A live browser QA was attempted. The Google Ads account reachable in the session ("Pump The Beat") was **suspended and canceled**, which disables the "New campaign" button, so the create→delete cycle could not be run. This is an account-state blocker, not a flow defect. To verify, re-run against an active, in-good-standing Google Ads account. The API path (Method 2) is also unverified here — no developer token configured, and Standard Access is approval-gated with a noted backlog.
+
 ---
 
 ## Method 1: Browser automation (no API required)
