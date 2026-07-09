@@ -1,6 +1,6 @@
 # Agentic Ads
 
-Deploy LinkedIn, Meta, X, Google, and Reddit ads with a single Claude Code prompt.
+Deploy LinkedIn, Meta, X, Google, Reddit, and TikTok ads with a single Claude Code prompt.
 
 No platform expertise required. You define the audience and budget. Claude handles targeting, placements, creative attachment, and launch.
 
@@ -38,6 +38,7 @@ This skill drives ad platform UIs directly in your browser. Install it first.
 | **X** | Browser automation or X Ads API (requires approval) | Paused campaign |
 | **Google** | Browser automation or Google Ads API (requires approval) | Paused campaign / Campaign Drafts |
 | **Reddit** | Browser automation or Reddit Ads API | Paused campaign |
+| **TikTok** | Browser automation or TikTok Marketing API | Disabled campaign / sandbox |
 
 ## Platform guides
 
@@ -46,6 +47,7 @@ This skill drives ad platform UIs directly in your browser. Install it first.
 - [X setup →](./x/SKILL.md)
 - [Google setup →](./google/SKILL.md)
 - [Reddit setup →](./reddit/SKILL.md)
+- [TikTok setup →](./tiktok/SKILL.md)
 - [Dry run guide →](./dry-run.md)
 
 ## Example prompts

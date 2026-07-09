@@ -25,6 +25,9 @@ Claude calls the Google Ads API with `validate_only: true` on all mutate operati
 ### Reddit
 No native validate-only flag. Claude builds the campaign and ad group with `is_enabled: false` (paused) — real objects that don't serve — and/or uses the **Preview an Ad** endpoint to render the creative. Delete after QA, same as the Meta cycle. Budgets are in micros ($1 = 1,000,000); Claude confirms the amount before any call.
 
+### TikTok
+No native validate-only flag. Claude uses the developer **sandbox** advertiser for a true no-spend dry run, or in production creates the campaign disabled (`operation_status: DISABLE`) with no active ad, then deletes after QA. Note the allow-list caveat: if `DISABLE` is ignored, Claude re-reads and disables the object before proceeding. Budgets are in the account currency as whole dollars — not cents or micros.
+
 ## What to check in a dry run
 
 - **Audience size**: too small (<10k) means limited delivery; too broad means wasted spend
@@ -40,4 +43,4 @@ Once you've reviewed:
 Looks good — go ahead and launch.
 ```
 
-Claude activates (LinkedIn), submits (Meta/Google), or calls the create endpoint (X/Reddit).
+Claude activates (LinkedIn), submits (Meta/Google), or calls the create endpoint (X/Reddit/TikTok).
