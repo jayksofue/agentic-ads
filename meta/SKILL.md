@@ -80,115 +80,91 @@ Claude navigates to the campaign, selects it, and deletes it from the campaign l
 
 ---
 
-## Method 2: Marketing API via the `meta-ads` CLI
+## Method 2: Marketing API via the official Meta Ads CLI (`meta ads`)
 
-Claude calls the Marketing API through the `meta-ads` command-line tool. Faster for bulk setup, no UI interaction.
+Claude calls the Marketing API through Meta's **official** command-line tool, [`meta-ads` on PyPI](https://pypi.org/project/meta-ads/) (binary `meta`, invoked as `meta ads …`). Announced by Meta on 2026-04-29 ([blog](https://developers.facebook.com/blog/post/2026/04/29/introducing-ads-cli/)) and built for AI-agent use. Faster than the UI for bulk setup, no browser needed.
 
-> **QA status (2026-07-04): ✅ CONFIRMED end-to-end from claude.ai.**
-> Ran the full dry-run → create-paused → verify → delete cycle live against ad account `act_15495450` (Engagement objective, US, age 25–45, "Financial technology" interest, $10/day). Campaign `52513568511696` and ad set `52513568917696` were created PAUSED, verified, then set to DELETED. Nothing ever served or spent.
+> **QA status (2026-07-10): tool verified; live create→delete re-run pending a fresh token.**
+> The official CLI was installed and exercised directly: `meta --version` (1.1.0), `meta auth status`, and the full `campaign`/`adset`/`delete` command surface + flags + enums were confirmed from the binary (not from docs). Auth wiring works — the token was accepted; the only failure was the reused access token having **expired** (it was a short-lived Jul-4 token). The full paused-create → delete cycle will be re-confirmed once a fresh token is provided, then this banner flips to ✅.
 >
-> This works from a claude.ai session **only after the CLI is authenticated once from a terminal** (`meta-ads auth login --token …`). The login persists to `~/.config/meta-ads-cli/config.json`, and the session's shell commands then pick it up automatically. A claude.ai session cannot perform that initial token/OAuth step itself.
->
-> Earlier drafts of this section referenced `@anthropic-ai/mcp-server-meta` and `cli-meta-ads`. Neither exists on npm anymore (`@anthropic-ai/mcp-server-meta` returns 404; `cli-meta-ads` was unpublished 2026-05-28). Use the `meta-ads` package instead.
+> A prior end-to-end run **did** pass on 2026-07-04 using the *third-party* npm `meta-ads` CLI (see fallback below): campaign `52513568511696` + ad set `52513568917696` created PAUSED on `act_15495450`, then deleted. We are standardizing on the official Python CLI because the third-party npm tool can be unpublished without notice — exactly what happened to the earlier `cli-meta-ads` (unpublished 2026-05-28) and the never-real `@anthropic-ai/mcp-server-meta` (404).
 
 ### Prerequisites
 
-1. **Install the CLI** (npm package `meta-ads`, actively maintained, v0.18.1+):
+1. **Install the CLI** (requires **Python 3.12+**):
 
    ```bash
-   npm install -g meta-ads
-   # or run ad-hoc without installing:
-   npx -y meta-ads@latest --help
+   pip install meta-ads        # or:  uv tool install meta-ads
+   meta --version              # -> meta, version 1.1.0
    ```
 
-   Verify with `meta-ads --version`.
-
-2. **Authenticate.** Interactive OAuth or a pasted token:
+2. **Authenticate** via the `ACCESS_TOKEN` environment variable (token needs `ads_management`, `ads_read`, `business_management` scopes; short-lived tokens expire in ~1–24h, long-lived ~60 days):
 
    ```bash
-   meta-ads auth login      # OAuth2, or paste an access token
-   meta-ads auth status     # confirm you're authenticated
+   export ACCESS_TOKEN="EAA...your_token..."
+   meta auth status            # -> Authenticated (token: EAA...) — presence only, not validity
    ```
 
-   Non-interactive (a terminal or CI where a token is already exchanged):
+   > `meta auth status` only checks that a token is *present*, not that it is still valid. An expired token still reports "Authenticated" and fails at the first API call with `API error (190): Session has expired`. Treat a real command as the true auth check.
 
-   ```bash
-   meta-ads setup --non-interactive --token "$META_ACCESS_TOKEN" --account-id act_XXXXXXXXXX
-   ```
-
-   The token needs the `ads_management`, `ads_read`, and `business_management` scopes and expires roughly every 60 days.
-
-3. **Ad Account ID** — format: `act_XXXXXXXXXX`
+3. **Ad account:** pass `--ad-account-id act_XXXX` on the `ads` group, or set `AD_ACCOUNT_ID=act_XXXX`.
 
 ### What Claude does via API
 
-Claude creates the campaign and ad set, both PAUSED. The structure matches Ads Manager:
-- Campaign: objective, name, status = PAUSED, budget
-- Ad Set: targeting, optimization goal, billing event
+Claude creates the campaign and ad set, both PAUSED. Note the **flag placement** (they are grouped, not per-subcommand):
+- `-o/--output {table,json,plain}` goes on the top-level `meta` command, **before** `ads`.
+- `--ad-account-id` goes on the `ads` group (`meta ads --ad-account-id … campaign create`), or use the `AD_ACCOUNT_ID` env var.
 
 ```bash
-meta-ads campaigns create \
-  --account-id act_XXXXXXXXXX \
+export AD_ACCOUNT_ID=act_XXXXXXXXXX
+meta -o json ads campaign create \
   --name "QA_Engagement_Jul2026" \
   --objective OUTCOME_ENGAGEMENT \
-  --status PAUSED \
-  --daily-budget 1000
+  --daily-budget 1000 \
+  --status PAUSED
+# then, with the returned CAMPAIGN_ID:
+meta ads adset create <CAMPAIGN_ID> \
+  --name "US_Fintech_25-45" \
+  --optimization-goal REACH --billing-event IMPRESSIONS \
+  --targeting @targeting.json
 ```
 
-**Key CLI behaviors (verified against meta-ads v0.18.1):**
-- Budget is passed in **cents**: `$10 daily = --daily-budget 1000`
-- Objective uses the `OUTCOME_*` enum: `OUTCOME_AWARENESS`, `OUTCOME_TRAFFIC`, `OUTCOME_ENGAGEMENT`, `OUTCOME_LEADS`, `OUTCOME_APP_PROMOTION`, `OUTCOME_SALES`. Engagement = `OUTCOME_ENGAGEMENT`.
-- `--status` defaults to `PAUSED` on create, so nothing serves until you flip it to `ACTIVE`.
-- `--dry-run` prints the exact request without executing it, so nothing is created (see below).
-- Advantage+ Audience and Dynamic Creative are controlled through the ad set targeting/creative spec, not campaign flags. Do not assume a default; set them explicitly and re-read with `meta-ads adsets get` to confirm.
-- **Ad set gotcha (hit during QA):** if the campaign has no explicit bid strategy, Meta may require a bid cap on the ad set. If `adsets create` returns `Invalid parameter` (subcode `1815857`, "Bid Amount Required For The Bid Strategy Provided"), add `--bid-amount <cents>` (e.g. `--bid-amount 500` = $5 cap). The CLI reports only "Invalid parameter"; the detailed reason comes from a raw Graph API call.
-- Disable Advantage+ audience expansion in the targeting JSON with `"targeting_automation":{"advantage_audience":0}` (confirmed accepted by the ad set create).
+**Key CLI behaviors (verified against meta-ads 1.1.0):**
+- Budget is passed in **cents**: `$10 daily = --daily-budget 1000`.
+- Objective enum: `OUTCOME_APP_PROMOTION`, `OUTCOME_AWARENESS`, `OUTCOME_ENGAGEMENT`, `OUTCOME_LEADS`, `OUTCOME_SALES`, `OUTCOME_TRAFFIC`. Engagement = `OUTCOME_ENGAGEMENT`.
+- `--status` defaults to `PAUSED` on create — nothing serves until you set `ACTIVE`.
+- **No `--dry-run` flag.** Unlike the third-party npm tool, the official CLI has no built-in validate/no-op mode. The QA path is: create PAUSED (a real object that can't serve), verify, then delete.
+- CBO vs ABO: put `--daily-budget`/`--lifetime-budget` on the **campaign** (CBO) and omit it on the ad set; or omit it on the campaign and set it per ad set (ABO). Don't set both.
+- Ad-set targeting: `--targeting-countries US` is a shortcut for geo only; for age + interests pass the full spec via `--targeting @file.json` (e.g. `age_min`/`age_max`, `geo_locations`, `flexible_spec` interests, `targeting_automation.advantage_audience: 0`).
 
 ### Campaign setup prompt
 
 ```
-Create a Meta ads campaign via the Marketing API:
+Create a Meta ads campaign via the official meta ads CLI:
 - Ad account: act_[your account ID]
 - Objective: OUTCOME_AWARENESS / OUTCOME_ENGAGEMENT / OUTCOME_TRAFFIC / OUTCOME_SALES
 - Audience: [age range, locations, interests, custom audiences]
 - Budget: $[amount] daily or lifetime
-- Start/end: [dates]
-- Creative: [image URL or video URL + copy]
 - Placement: Feed only (no Audience Network)
-- Dry run: yes/no
 ```
-
-### Dry run mode
-
-The CLI supports `--dry-run` on `create` and `update`. It prints the exact API request that would be sent and does **not** execute it, so nothing is created. This is a true no-op.
-
-```bash
-meta-ads campaigns create \
-  --account-id act_XXXXXXXXXX \
-  --name "QA_Engagement_Jul2026" \
-  --objective OUTCOME_ENGAGEMENT \
-  --status PAUSED \
-  --daily-budget 1000 \
-  --dry-run
-```
-
-Claude returns the request payload it would send. Drop `--dry-run` to actually create the (still PAUSED) objects.
 
 ### Delete after QA
 
-The CLI has no `delete` subcommand. Set status to `DELETED` via `update` (`--force` skips the destructive-change confirmation). Delete the ad set first, then the campaign:
+The official CLI has a real `delete` that **cascades** (removes the campaign and all its child ad sets and ads) — no need to delete children first:
 
 ```bash
-meta-ads adsets update    --adset-id <ADSET_ID>       --status DELETED --force
-meta-ads campaigns update --campaign-id <CAMPAIGN_ID> --status DELETED --force
+meta ads campaign delete <CAMPAIGN_ID> --force   # --force skips the confirm prompt
 ```
 
 ### Key settings Claude enforces
 
-- `special_ad_categories: []` — required if your ad is not in housing/credit/employment
-- Audience Network placement: excluded by default (same as LAN off on LinkedIn)
-- `bid_strategy: LOWEST_COST_WITHOUT_CAP` unless you specify a target CPA
-- Campaign status: `PAUSED` until you explicitly confirm launch
+- `--special-ad-categories` set only for regulated ads (housing/credit/employment/politics); omit otherwise.
+- Campaign status: `PAUSED` until you explicitly confirm launch.
+- Advantage+ audience expansion off unless asked (`targeting_automation.advantage_audience: 0` in the targeting spec).
+
+### Fallback: third-party npm `meta-ads` CLI
+
+If Python 3.12+ isn't available, the third-party npm package `meta-ads` (by `gupsammy`, Node) is a documented alternative that was **live-verified end-to-end on 2026-07-04**. It has a `--dry-run` no-op the official CLI lacks. Command shape differs: `meta-ads campaigns create --account-id … --daily-budget 1000` (plural `campaigns`, hyphenated binary), auth via `meta-ads auth login --token …` (persists to `~/.config/meta-ads-cli/config.json`), delete via `meta-ads campaigns update --campaign-id … --status DELETED --force`. Ad-set gotcha there: a CBO campaign with no explicit bid strategy may reject the ad set with `Invalid parameter` (subcode `1815857`) until you add `--bid-amount <cents>`. Prefer the official CLI; treat this as the fallback.
 
 ### Scaling: multiple ad sets
 

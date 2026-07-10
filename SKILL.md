@@ -11,7 +11,7 @@ You describe the campaign. Claude handles targeting, placements, budgets, creati
 | Platform | Method | Status |
 |---|---|---|
 | LinkedIn | Browser automation (Campaign Manager) | ✅ Production-ready (live launches at Eco) |
-| Meta | `meta-ads` CLI (Marketing API) | ✅ Verified end-to-end 2026-07-04 (live create→delete) |
+| Meta | Official `meta ads` CLI (Marketing API) | ✅ Live create→delete 2026-07-04 (npm fallback); official CLI verified, live re-run pending fresh token |
 | X (Twitter) | Browser automation or X Ads API | ✅ Browser verified 2026-07-09 (live draft→delete); API QA pending (approval-gated) |
 | Google | Browser automation or Google Ads API | ✅ Create/draft verified 2026-07-09 (Eco 2025); ⚠️ saved drafts have no UI delete — Discard on exit instead; API QA pending (approval-gated) |
 | Reddit | Browser automation or Reddit Ads API | 🚧 New — see reddit/ |
