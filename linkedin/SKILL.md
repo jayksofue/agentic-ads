@@ -1,3 +1,8 @@
+---
+name: agentic-ads-linkedin
+description: Deploy LinkedIn ad campaigns via browser automation of Campaign Manager. Creates as Draft, activates only on explicit confirmation. LinkedIn's hierarchy is Campaign Group → Campaign → Ad (no "ad set" object). Use when working with LinkedIn ads specifically; loaded by the parent agentic-ads skill.
+---
+
 # LinkedIn Ads — Skill
 
 Claude drives LinkedIn Campaign Manager directly via browser automation. No API key required.

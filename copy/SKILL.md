@@ -1,3 +1,8 @@
+---
+name: agentic-ads-copy
+description: Generate and validate ad copy for any ad platform with an anti-slop check before attaching. Enforces platform character limits and preset-CTA rules. Loaded by the parent agentic-ads skill when creative copy is needed.
+---
+
 # Ad Copy — Skill
 
 Generates and validates ad copy for any platform. Runs anti-slop before attaching creative.

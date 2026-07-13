@@ -1,3 +1,8 @@
+---
+name: agentic-ads
+description: Deploy paid ads across LinkedIn, Meta, X, Google, Reddit, and TikTok from a single prompt. Handles targeting, placements, budgets, creative attachment, and launch via browser automation (Claude for Chrome) or platform APIs. Every platform defaults to paused/draft — nothing goes live without explicit confirmation. Use this when the user wants to create, review, or launch an ad campaign on any of these platforms.
+---
+
 # Agentic Ads — Claude Code Skill
 
 Deploy LinkedIn, Meta, X, Google, Reddit, and TikTok ads from a single prompt. No platform expertise required.
@@ -11,34 +16,35 @@ You describe the campaign. Claude handles targeting, placements, budgets, creati
 | Platform | Method | Status |
 |---|---|---|
 | LinkedIn | Browser automation (Campaign Manager) | ✅ Production-ready (live launches at Eco) |
-| Meta | Official `meta ads` CLI (Marketing API) | ✅ Live create→delete 2026-07-04 (npm fallback); official CLI verified, live re-run pending fresh token |
+| Meta | `meta-ads` PyPI CLI (Marketing API; blog-referenced, not formally Meta-attributed) | 🚧 Live create→delete 2026-07-04 via the third-party npm fallback (✅); PyPI CLI command surface verified against the binary — live re-run pending a fresh access token (📝) |
 | X (Twitter) | Browser automation or X Ads API | ✅ Browser verified 2026-07-09 (live draft→delete); API QA pending (approval-gated) |
-| Google | Browser automation or Google Ads API | ✅ Create/draft verified 2026-07-09 (Eco 2025); ⚠️ saved drafts have no UI delete — Discard on exit instead; API QA pending (approval-gated) |
-| Reddit | Browser automation or Reddit Ads API | 🚧 New — see reddit/ |
-| TikTok | Browser automation or TikTok Marketing API | 🚧 New — see tiktok/ |
+| Google | Browser automation or Google Ads API | 🚧 Create/draft verified 2026-07-09 (Eco 2025); saved-draft delete leg unverified — no UI delete once a draft is saved, so QA path is **Discard-on-exit**; publish gated by "Confirm it's you"; API QA pending (approval-gated) |
+| Reddit | Browser automation or Reddit Ads API v3 | 📝 Documented, not live-verified — API paused-field name (`is_enabled` vs `configured_status`) needs sandbox confirmation before shipping (see reddit/ safety banner) |
+| TikTok | Browser automation or TikTok Marketing API v1.3 | 📝 Documented, not live-verified — see tiktok/ |
 
-> **Verification legend:** ✅ = live create→delete cycle run and confirmed. 📝 = commands/UI steps documented but not yet exercised end-to-end from this environment (blocked on API credentials that require platform approval). Browser-automation paths depend on the Claude for Chrome extension being logged into each platform.
+> **Verification legend:** ✅ = live create→delete cycle run and confirmed on this environment. 🚧 = partially verified with a documented gap (see per-platform QA banner). 📝 = commands/UI steps documented but not exercised end-to-end here (typically blocked on API credentials that require platform approval or on unverified field names — see per-platform QA banner). Browser-automation paths always require the Claude for Chrome extension logged into that platform.
 
 ## Quickstart
 
 ### Step 0 — Browser extension (required)
 
-This skill drives ad platform UIs directly in your browser. The extension is required for LinkedIn and for browser fallback mode on X and Google.
+Every platform in this skill drives its Ads Manager UI in your real Chrome (as the primary path for LinkedIn/Reddit and as a browser fallback for Meta/X/Google/TikTok whose APIs are approval-gated). The Chrome extension is required across the board.
 
 1. Install the **Claude for Chrome** extension from the Chrome Web Store
 2. In Claude Code, enable it under Settings → MCP → Browser
-3. Open Chrome and log into the ad platform you want to use (LinkedIn Campaign Manager, Meta Business Manager, etc.)
+3. Log into every ad platform you plan to use (LinkedIn Campaign Manager, business.facebook.com / ads.facebook.com, ads.x.com, ads.google.com, ads.reddit.com, ads.tiktok.com) in Chrome before starting
 
 ### Step 1 — Run the skill
 
 1. Open Claude Code
-2. Say: **"Run the agentic-ads skill"**
+2. Say: **"run agentic-ads"** (the frontmatter registers the skill by name)
 3. Claude will ask:
    - Which platform?
-   - What ad format? (awareness / engagement / conversion / document)
+   - Campaign objective (awareness / engagement / traffic / conversions / video views / etc. — platform-specific)?
+   - Ad format (single image / video / carousel / document / etc. — platform-specific)?
    - Who's the audience?
    - What's the budget and date range?
-4. Claude builds, previews, and (with your confirmation) launches
+4. Claude builds the campaign PAUSED/DRAFT (never live), shows a summary, and activates only on explicit "yes, launch" from you
 
 ## Platform setup guides
 

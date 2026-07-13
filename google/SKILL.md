@@ -1,3 +1,8 @@
+---
+name: agentic-ads-google
+description: Deploy Google Ads campaigns via browser automation (ads.google.com) or the Google Ads API. Create/draft flow was live-QA'd 2026-07-09. Note saved drafts have no UI delete — QA path is Discard-on-exit. Use when working with Google Ads specifically; loaded by the parent agentic-ads skill.
+---
+
 # Google Ads — Skill
 
 Claude can run Google campaigns two ways — via browser automation (works today, no API approval needed) or via the Google Ads API (requires a developer token). Both support draft/paused mode.

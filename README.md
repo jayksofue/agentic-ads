@@ -12,29 +12,32 @@ Deployed at [Eco](https://eco.com):
 
 ## Quickstart
 
-### Step 0 — Browser extension (required)
+### Step 0 — Browser extension (required for every platform)
 
-This skill drives ad platform UIs directly in your browser. Install it first.
+Every platform in this skill drives its Ads Manager UI in your real Chrome (as a fallback for the API-only platforms, and as the primary path for platforms without a usable API tier — LinkedIn, Reddit).
 
 1. Install the **Claude for Chrome** extension from the Chrome Web Store
 2. In Claude Code, enable it under Settings → MCP → Browser
-3. Open Chrome and log into the ad platform you want to use
+3. Log into every ad platform you plan to use (LinkedIn Campaign Manager, ads.reddit.com, ads.x.com, ads.google.com, ads.tiktok.com, business.facebook.com) in Chrome before starting
 
-### Step 1 — Run the skill
+### Step 1 — Install as a Claude Code skill
 
 1. Install [Claude Code](https://claude.ai/code)
-2. Clone this repo and load the skill:
+2. Clone this repo and install it as a skill by symlinking (or copying) into your Claude skills directory:
+   ```bash
+   git clone https://github.com/jayksofue/agentic-ads.git
+   mkdir -p ~/.claude/skills
+   ln -s "$PWD/agentic-ads" ~/.claude/skills/agentic-ads
    ```
-   claude --skill ./agentic-ads/SKILL.md
-   ```
-3. Tell Claude what you want to launch
+   (Or drop the folder in `.claude/skills/` inside a specific project to scope it there.) The skill's YAML frontmatter registers it as `agentic-ads`.
+3. In Claude Code, say **"run agentic-ads"** (or reference the skill by name). Claude will ask which platform + what you want to launch.
 
 ## Platforms
 
 | Platform | Method | Dry run |
 |---|---|---|
 | **LinkedIn** | Browser automation (Campaign Manager) | Draft status |
-| **Meta** | Official `meta ads` CLI (Marketing API) | Paused campaign, then delete (no dry-run flag) |
+| **Meta** | `meta-ads` PyPI CLI (blog-referenced, not formally Meta-attributed) | Paused campaign, then delete (no dry-run flag; npm fallback has one) |
 | **X** | Browser automation or X Ads API (requires approval) | Paused campaign |
 | **Google** | Browser automation or Google Ads API (requires approval) | Paused campaign / Campaign Drafts |
 | **Reddit** | Browser automation or Reddit Ads API | Paused campaign |
@@ -76,10 +79,12 @@ $50/day. Target CPA: $15. Validate only — don't submit yet.
 
 Claude uses platform-specific methods per ad network:
 
-- **LinkedIn**: Drives Campaign Manager via browser using the `nativeSetter` pattern for React inputs. Handles LAN, Audience Expansion, date pickers, and format selection automatically.
-- **Meta**: Calls the Marketing API directly through Meta's official `meta ads` CLI (Python, `pip install meta-ads`). No UI. Live create→delete verified 2026-07-04 (via the third-party npm fallback); official CLI verified and standardized on, live re-run pending a fresh token.
-- **X**: Drives Ads Manager via browser. Handles objective-specific ad formats (website card for traffic, standard post for reach/engagements/video). Turns off Optimize Targeting by default.
-- **Google**: Drives Google Ads via browser. Handles campaign type selection, Video subtypes, turns off Display Network and AI Max (Final URL expansion + Text customization) by default.
+- **LinkedIn**: Drives Campaign Manager via browser using the `nativeSetter` pattern for React inputs. Handles LAN, Audience Expansion, date pickers, and format selection automatically. Creates as Draft.
+- **Meta**: Calls the Marketing API directly through the `meta-ads` PyPI CLI (Python, `pip install meta-ads`, binary `meta`). This is the CLI referenced in Meta's April 2026 "Introducing Ads CLI" developer blog post — PyPI author metadata is anonymous, so the skill treats it as blog-referenced rather than formally attributed. Live create→delete verified 2026-07-04 (via the third-party npm `meta-ads` fallback); PyPI CLI's commands + flag surface verified against the binary, live re-run pending a fresh access token.
+- **X**: Drives Ads Manager via browser. Handles objective-specific ad formats (website card for traffic, standard post for reach/engagements/video). Turns off Optimize Targeting by default. Save-draft-from-Review path live-verified 2026-07-09.
+- **Google**: Drives Google Ads via browser. Handles campaign type selection, Video subtypes, turns off Display Network and AI Max (Final URL expansion + Text customization) by default. Create/draft flow live-verified 2026-07-09 on Eco 2025 — note saved drafts have no UI delete, so QA path is Discard-on-exit.
+- **Reddit**: Drives ads.reddit.com via browser (primary) or the Reddit Ads API v3 (allow-list required). Subreddit/community targeting is the platform's main advantage. API paused-field name unverified against Reddit's private v3 spec — see reddit/ safety banner.
+- **TikTok**: Drives ads.tiktok.com via browser or calls the TikTok Marketing API v1.3 (developer-app review required). Video-first; enforces TikTok-only placements (not Pangle) and disables Automatic Targeting by default.
 
 ## License
 

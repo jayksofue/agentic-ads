@@ -1,3 +1,8 @@
+---
+name: agentic-ads-x
+description: Deploy X (Twitter) ad campaigns via browser automation (ads.x.com) or the X Ads API v12. Save-draft-then-verify flow was live-QA'd 2026-07-09. Use when working with X/Twitter ads specifically; loaded by the parent agentic-ads skill.
+---
+
 # X Ads — Skill
 
 Claude can run X campaigns two ways — via browser automation (works today, no API approval needed) or via the X Ads API (requires separate approval). Both support paused/draft mode.

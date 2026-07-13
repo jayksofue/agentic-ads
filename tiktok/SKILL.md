@@ -1,3 +1,8 @@
+---
+name: agentic-ads-tiktok
+description: Deploy TikTok ad campaigns via browser automation (ads.tiktok.com) or the TikTok Marketing API v1.3. Documented not yet live-verified. Video-first — expect higher minimum budgets (~$50/day campaign). Use when working with TikTok ads specifically; loaded by the parent agentic-ads skill.
+---
+
 # TikTok Ads — Skill
 
 Claude can run TikTok campaigns two ways — via browser automation (works today, no API approval needed) or via the TikTok Marketing API (requires a developer app and approval). Both support a paused state so you can review before spending.

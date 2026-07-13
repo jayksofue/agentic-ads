@@ -1,3 +1,8 @@
+---
+name: agentic-ads-meta
+description: Deploy Meta (Facebook/Instagram) ad campaigns via browser automation (ads.facebook.com) or the Marketing API. Two CLI paths: the anonymous PyPI `meta-ads` (binary `meta`, referenced in Meta's April 2026 Ads CLI blog post) and the third-party npm `meta-ads` fallback. Every create defaults to PAUSED. Use when working with Meta ads specifically; loaded by the parent agentic-ads skill.
+---
+
 # Meta Ads — Skill
 
 Claude can run Meta campaigns two ways — via the Marketing API (no UI needed) or via browser automation (no API setup needed). Both support draft/paused mode so you can review before spending.
@@ -80,9 +85,9 @@ Claude navigates to the campaign, selects it, and deletes it from the campaign l
 
 ---
 
-## Method 2: Marketing API via the official Meta Ads CLI (`meta ads`)
+## Method 2: Marketing API via the `meta-ads` PyPI CLI (`meta ads`)
 
-Claude calls the Marketing API through Meta's **official** command-line tool, [`meta-ads` on PyPI](https://pypi.org/project/meta-ads/) (binary `meta`, invoked as `meta ads …`). Announced by Meta on 2026-04-29 ([blog](https://developers.facebook.com/blog/post/2026/04/29/introducing-ads-cli/)) and built for AI-agent use. Faster than the UI for bulk setup, no browser needed.
+Claude calls the Marketing API through the command-line tool published as [`meta-ads` on PyPI](https://pypi.org/project/meta-ads/) (binary `meta`, invoked as `meta ads …`). This is the CLI referenced in Meta's April 2026 developer-blog post [Introducing Ads CLI](https://developers.facebook.com/blog/post/2026/04/29/introducing-ads-cli/) — the blog is a verified public Meta post and the CLI's `meta ads campaign create --name … --objective OUTCOME_SALES --daily-budget 5000` matches the blog's examples verbatim, but the PyPI package's author/repo fields are blank (proprietary license, Cython-compiled `.so` modules). Treat it as **blog-referenced**, not formally attributed to Meta — it works, but if you need signed provenance, use the third-party npm `meta-ads` fallback below (also unofficial but with a public repo).
 
 > **QA status (2026-07-10): tool verified; live create→delete re-run pending a fresh token.**
 > The official CLI was installed and exercised directly: `meta --version` (1.1.0), `meta auth status`, and the full `campaign`/`adset`/`delete` command surface + flags + enums were confirmed from the binary (not from docs). Auth wiring works — the token was accepted; the only failure was the reused access token having **expired** (it was a short-lived Jul-4 token). The full paused-create → delete cycle will be re-confirmed once a fresh token is provided, then this banner flips to ✅.

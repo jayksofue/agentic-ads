@@ -14,19 +14,19 @@ Add to any campaign prompt:
 Claude builds the campaign to **Draft** status in Campaign Manager and stops. Nothing is activated, nothing is billed. You review the draft in the UI and tell Claude to activate when ready.
 
 ### Meta
-Claude runs the `meta-ads` CLI with `--dry-run`, which prints the exact API request without executing it — a true no-op, nothing is created. (Confirmed live on 2026-07-04.) Drop `--dry-run` to create the objects, which are still `PAUSED` so nothing serves or spends until you flip them to `ACTIVE`.
+The `meta-ads` PyPI CLI has **no `--dry-run` flag**. The QA path is: create the campaign PAUSED (via `meta ads campaign create --status PAUSED` — a real object that cannot serve), verify it by re-reading, then `meta ads campaign delete <ID> --force` (delete cascades to child ad sets and ads). The npm `meta-ads` fallback tool *does* have a `--dry-run` flag (live-verified 2026-07-04 as a true no-op) — use it if you want a request-only preview without creating anything.
 
 ### X (Twitter)
-No native validate-only flag. Claude generates the full API payload (campaign + line item + targeting criteria + creative) and shows it to you as structured JSON. No API call is made until you explicitly confirm.
+Method 1 (browser, live-verified 2026-07-09): build the wizard through Review-and-launch, click **Save draft** — the campaign persists as `Draft` state (never billable) until you delete it or explicitly click Publish. No pre-launch Paused toggle; the mechanism is Save draft. Method 2 (X Ads API v12): no `validate_only` flag; Claude generates the full API payload (campaign + line item + targeting + creative) as structured JSON without submitting until you confirm.
 
 ### Google
-Claude calls the Google Ads API with `validate_only: true` on all mutate operations. Google runs policy checks, keyword conflicts, ad copy character limits, and targeting validation — without creating anything.
+Method 1 (browser, live-verified 2026-07-09 on Eco 2025): build the wizard, click the ✕ close icon, and choose **Discard** in the "Save as a campaign draft?" modal. Nothing persists — this is the true no-spend dry run. **Do not click Save** — saved drafts have no UI delete control (the audit surfaced this: the trash icon is not exposed for drafts-in-progress, so the only route to remove a saved draft is via Google Ads Editor or by publishing-then-removing, which hits the "Confirm it's you" identity-verification gate). Method 2 (Google Ads API, if you have Basic+ access): `validate_only: true` on mutate operations runs policy/keyword/character/targeting validation — it returns errors only (no forecasts). Weekly-impression forecasts require KeywordPlanIdeaService instead.
 
 ### Reddit
-No native validate-only flag. Claude builds the campaign and ad group with `is_enabled: false` (paused) — real objects that don't serve — and/or uses the **Preview an Ad** endpoint to render the creative. Delete after QA, same as the Meta cycle. Budgets are in micros ($1 = 1,000,000); Claude confirms the amount before any call.
+No native validate-only flag. Claude builds the campaign and ad group in the paused state (real objects that don't serve — verify by re-reading before any activation), and/or uses the **Preview an Ad** endpoint to render the creative. Delete after QA, same idea as the Meta cycle. Budgets are in micros ($1 = 1,000,000). ⚠️ The paused-state field name is unverified against Reddit's private v3 spec — see [reddit/SKILL.md](./reddit/SKILL.md) safety banner before your first live call.
 
 ### TikTok
-No native validate-only flag. Claude uses the developer **sandbox** advertiser for a true no-spend dry run, or in production creates the campaign disabled (`operation_status: DISABLE`) with no active ad, then deletes after QA. Note the allow-list caveat: if `DISABLE` is ignored, Claude re-reads and disables the object before proceeding. Budgets are in the account currency as whole dollars — not cents or micros.
+No native validate-only flag. Claude uses the developer **sandbox** advertiser for a true no-spend dry run, or in production creates the campaign disabled (`operation_status: DISABLE`) with no active ad, then deletes after QA. Note the observed allow-list caveat: some apps report `DISABLE` being silently ignored — Claude re-reads and re-disables the object before proceeding. Budgets are in the account currency as whole units (dollars for USD accounts) — not cents, not micros.
 
 ## What to check in a dry run
 
