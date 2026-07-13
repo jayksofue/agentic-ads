@@ -30,12 +30,18 @@ Keep the customer's problem in the headline, not your product's features. Featur
 
 ## Platform character limits
 
+Two numbers matter per field: the **hard max** the platform will reject past, and the **soft target** to avoid UI truncation. Where a CTA is a preset dropdown (not free text), the column says so — do not attempt to write custom CTA copy for those platforms.
+
 | Platform | Headline | Body / Intro text | CTA |
 |---|---|---|---|
-| LinkedIn | 70 chars | 150 chars (intro text) | 44 chars |
-| Meta | 40 chars | 125 chars (primary text) | 20 chars |
-| X | — | 280 chars total | — |
-| Google Search | 30 chars (×3 headlines) | 90 chars (×2 descriptions) | — |
+| **LinkedIn** (sponsored content) | 200 hard / 70 to avoid truncation | 600 hard / 150 before "...see more" | **preset dropdown** (Apply, Download, Learn more, Sign up, Register, Request demo, …) |
+| **Meta** (Feed) | 40 recommended (headline) | 125 recommended (primary text; 40 recommended for description) | **preset dropdown** (Shop Now, Sign Up, Learn More, Book Now, …) |
+| **X** (promoted post) | — | 280 chars total for the tweet | — (Website Card headline has a limit; ask for the exact for that format) |
+| **Google Search (RSA)** | 30 chars × **3–15 headlines** | 90 chars × **2–4 descriptions** | — (headline slot serves as CTA) |
+| **Reddit** (promoted post) | 300 chars (post title) | body varies by post type | preset (Learn More, Shop Now, Sign Up, …) |
+| **TikTok** (in-feed) | — | 100 chars ad text | preset (Shop Now, Learn More, Download, …) |
+
+Google Search moved from Expanded Text Ads (fixed 3 headlines / 2 descriptions) to **Responsive Search Ads** — you now supply 3–15 headlines and 2–4 descriptions and Google picks the combination per query. Old ETA-style copy specs are obsolete.
 
 ---
 
@@ -51,15 +57,15 @@ These patterns weaken copy. Claude checks for all of them and rewrites before pr
 | **Feature-first headline** | "Introducing our new API" | Lead with the customer's problem or outcome |
 | **Passive voice** | "Payments are processed faster" | "Send payments in seconds" |
 | **Vague superlatives** | "the best", "world-class", "leading" | Cut or replace with a verifiable claim |
-| **Em dashes as drama** | "Payments — reimagined" | Rewrite without the dash |
+| **Em dashes as drama** | "Payments — reimagined" | Rewrite without the dash. **Scoped to ad copy only** — this rule doesn't apply to the skill's own docs, README, etc. |
 
-If `copy_tells.py` is available at `~/.claude/skills/eco-seo/copy_tells.py`, run it:
+**Optional: automated slop check.** If Eco's private slop-scoring script (`copy_tells.py`) is available in your environment, you can pipe copy through it:
 
 ```bash
-echo "your copy here" | python ~/.claude/skills/eco-seo/copy_tells.py
+echo "your copy here" | python "$COPY_TELLS_PATH"   # if configured
 ```
 
-A score of 0 = clean. Any flags = rewrite the flagged line before proceeding.
+A score of 0 = clean. Any flags = rewrite the flagged line before proceeding. This script is not vendored into this repo — external users should skip this step and rely on the checklist above.
 
 ---
 

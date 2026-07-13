@@ -20,6 +20,7 @@ Claude drives [ads.x.com](https://ads.x.com) directly in Chrome — same pattern
 1. **Claude for Chrome extension** — install from the Chrome Web Store, enable under Claude Code Settings → MCP → Browser
 2. Log into [X Ads Manager](https://ads.x.com) in Chrome before starting
 3. Your X Ads account ID — found in the URL after logging in
+4. **Payment method on file** (Funding sources → Add). Save-draft works without one, but Publish is blocked until a funding instrument exists.
 
 ### What Claude does
 

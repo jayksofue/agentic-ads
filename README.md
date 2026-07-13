@@ -7,8 +7,8 @@ No platform expertise required. You define the audience and budget. Claude handl
 ## Results
 
 Deployed at [Eco](https://eco.com):
-- 3 ad sets across US/CA/AU, Singapore, and UK — launched in one session
-- CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10x)
+- 3 LinkedIn Campaigns covering three geo clusters (US/CA/AU, Singapore, UK) — launched in one session
+- CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10×)
 
 ## Quickstart
 

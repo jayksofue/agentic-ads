@@ -22,7 +22,13 @@ You describe the campaign. Claude handles targeting, placements, budgets, creati
 | Reddit | Browser automation or Reddit Ads API v3 | 📝 Documented, not live-verified — API paused-field name (`is_enabled` vs `configured_status`) needs sandbox confirmation before shipping (see reddit/ safety banner) |
 | TikTok | Browser automation or TikTok Marketing API v1.3 | 📝 Documented, not live-verified — see tiktok/ |
 
-> **Verification legend:** ✅ = live create→delete cycle run and confirmed on this environment. 🚧 = partially verified with a documented gap (see per-platform QA banner). 📝 = commands/UI steps documented but not exercised end-to-end here (typically blocked on API credentials that require platform approval or on unverified field names — see per-platform QA banner). Browser-automation paths always require the Claude for Chrome extension logged into that platform.
+> **Verification legend:**
+> - **✅** = live create→delete cycle run and confirmed on this environment
+> - **🚧** = partially verified with a documented gap (see per-platform QA banner)
+> - **📝** = commands/UI steps documented but not exercised end-to-end here (typically blocked on API credentials requiring platform approval, or on unverified field names — see per-platform QA banner)
+> - **⚠️** = documented safety-critical caveat operators must resolve before shipping (currently: Reddit paused-state field name)
+>
+> Browser-automation paths always require the Claude for Chrome extension logged into that platform.
 
 ## Quickstart
 
@@ -62,22 +68,38 @@ Every platform supports a preview/validate step before any money is spent. See [
 
 ## Real-world results
 
-Deployed at [Eco](https://eco.com) — 3 ad sets across US/CA/AU, Singapore, and UK launched in one session.
-CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10x).
+Deployed at [Eco](https://eco.com) — **3 LinkedIn Campaigns** covering three geo clusters (US/CA/AU, Singapore, UK) launched in a single session.
+CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10×).
 
 ## Prompt examples
 
 ```
 Launch a document ad on LinkedIn targeting CFOs and treasurers in financial services.
-$500 lifetime budget. July 1–31. LAN off. Audience expansion off.
+$500 lifetime budget. July 1–31. LAN off. Audience expansion off. Leave as Draft.
 ```
 
 ```
 Create a Meta awareness campaign for fintech decision-makers in the US.
-$1,000 monthly budget. Use the creative at [URL]. Dry run first.
+$1,000 monthly budget. Use the creative at [URL]. Create PAUSED (paused-review pattern; no --dry-run on the PyPI CLI).
+Declare special-ad-category: FINANCIAL_PRODUCTS_SERVICES.
 ```
 
 ```
-Deploy an X engagement campaign targeting crypto and DeFi audiences.
-$300 budget. Show me the payload before launching.
+Deploy an X engagements campaign targeting crypto and DeFi audiences.
+$300 total budget. Show me the payload before launching. Save as Draft.
 ```
+
+## Ad review SLAs
+
+Once you activate a campaign, most platforms hold it in review before serving. Rough windows:
+
+| Platform | Typical review | Regulated (crypto/finance/politics/gambling) |
+|---|---|---|
+| LinkedIn | ≤24h | up to 48h |
+| Meta | 15 min – few hours | 24h+, occasional discretionary rejections |
+| X | ≤24h | 24–48h |
+| Google | 1 business day | 3–5 business days, can require verification |
+| Reddit | few hours – 24h | 24h+, some geos restricted for crypto |
+| TikTok | 24h typical | 24–48h; strict on financial/investment claims |
+
+Don't schedule launch windows that assume instant serving. Claude checks status after activation and reports back.

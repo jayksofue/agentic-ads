@@ -18,6 +18,7 @@ Same pattern as the LinkedIn skill — Claude drives Meta Ads Manager directly i
 1. **Claude for Chrome extension** — install from the Chrome Web Store, enable under Claude Code Settings → MCP → Browser
 2. Log into [Meta Ads Manager](https://adsmanager.facebook.com) in Chrome before starting
 3. Your Ad Account ID — found in the URL: `act_XXXXXXXXXX`
+4. **Payment method on file** in the Meta ad account (Business Settings → Payments). Meta will block activation without one, though PAUSED campaign creation itself works.
 
 ### What Claude does
 

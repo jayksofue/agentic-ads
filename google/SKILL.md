@@ -26,6 +26,7 @@ Claude drives [ads.google.com](https://ads.google.com) directly in Chrome — sa
 1. **Claude for Chrome extension** — install from the Chrome Web Store, enable under Claude Code Settings → MCP → Browser
 2. Log into [Google Ads](https://ads.google.com) in Chrome before starting
 3. Your Customer ID — 10-digit number shown in the top right of Google Ads (format: XXX-XXX-XXXX)
+4. **Payment method on file** (Billing → Payment methods) and **account in Good Standing**. Google disables "New campaign" entirely on suspended/canceled accounts (verified 2026-07-09 on Pump The Beat — switch accounts if the button is greyed out).
 
 ### What Claude does
 
