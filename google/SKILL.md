@@ -11,7 +11,9 @@ Claude can run Google campaigns two ways — via browser automation (works today
 >
 > **Important cleanup finding:** once a "draft in progress" is **saved**, it has **no delete control in the campaigns UI** — no inline trash on the row, no actions column, the bulk **Edit is disabled** for drafts, the builder has no delete button, and auto-save means clicking the close (X) no longer prompts the Save/Discard modal. So for QA, **click Discard in the exit modal instead of Save** (the documented cleanup) — do NOT Save the draft. To remove an already-saved draft, use Google Ads Editor / the API, or finish+publish it as a PAUSED campaign (real campaigns do expose a Remove status control) and then remove it.
 >
-> First attempt hit a different account ("Pump The Beat") that was suspended/canceled, which disables "New campaign" entirely — switch accounts via the account selector. Method 2 (Google Ads API) remains unverified: no developer token configured, and Standard Access is approval-gated.
+> First attempt hit a different account ("Pump The Beat") that was suspended/canceled, which disables "New campaign" entirely — switch accounts via the account selector. Method 2 (Google Ads API) remains unverified: no developer token configured. Note that **Basic Access is also approval-gated** (~5-business-day review); new developer tokens start at Test Account Access only.
+>
+> **⚠️ Cleanup circular-dependency (2026-07-09 attempt):** the "finish + publish PAUSED, then remove" cleanup path for a saved draft was tested and hit **Google's "Confirm it's you" identity-verification modal at Publish** — an authentication gate Claude cannot pass. That means for accounts with the identity gate on, the only fully-agentic recovery for a saved draft is Google Ads Editor or the API (once configured). For QA runs, prevent the problem: **Discard on exit; never Save**.
 
 ---
 
@@ -55,10 +57,11 @@ After selecting Video campaign type, a **"Select a campaign subtype"** step appe
 | **Efficient reach** | Bumper, skippable in-stream, in-feed, Shorts | CPM |
 | **Non-skippable reach** | Bumper, standard non-skippable, 30s non-skippable | CPM |
 | **Target frequency** | Bumper, skippable/non-skippable in-stream, in-feed, Shorts | CPM |
-| **Drive conversions** | Skippable in-stream + conversion-oriented formats | CPM |
 | **Ad sequence** | Mix of skippable, non-skippable, or bumper in sequence | CPM |
 | **Audio reach** | Audio ads on YouTube | CPM |
 | **YouTube subscriptions and engagements** (NEW) | Video engagement formats | Engagement-based |
+
+> **Video Action Campaigns ("Drive conversions") were sunset by Google in 2025** — creation was removed April 2025 and all remaining VACs auto-upgraded to Demand Gen through May 2026. For conversion-focused video buying, use the **Demand Gen** campaign type instead of Video (see the campaign-type table above).
 
 ### Key gotchas Claude handles
 
@@ -73,7 +76,7 @@ After selecting Video campaign type, a **"Select a campaign subtype"** step appe
 | Broad match keywords by default | Wraps terms in `"quotes"` for phrase or `[brackets]` for exact unless you specify |
 | React inputs ignore `.value =` assignment | Uses nativeSetter pattern same as LinkedIn |
 | Budget defaults to Average daily | Switches to Campaign total if you specify a fixed amount |
-| "Save as a campaign draft?" modal on close | Three options: Cancel (stay on form), Discard (delete), Save (save as draft) — Claude clicks Discard after QA |
+| "Save as a campaign draft?" modal on close | Three options: Cancel (stay on form), Discard (delete), Save (save as draft) — Claude clicks Discard after QA. ⚠️ If the wizard was reopened from an *existing* saved draft (via **Finish**), Discard drops the in-session edits but leaves the underlying draft intact — this dialog is per-session, not per-object. Only a first-time wizard's Discard removes the draft entirely. |
 | Customer acquisition: bids equally for new and existing by default | Leave as-is unless you explicitly want new-customer-only targeting |
 | Video subtype selection required | Must select correct subtype — default is Video views (TrueView); wrong subtype changes ad format and billing |
 | Conversion goals pre-populated from account defaults | Shows Sign-ups and Submit lead forms with warning icons — safe to proceed without changing these for QA |
@@ -118,13 +121,13 @@ For QA: build the campaign, review it, then Discard on exit (don't Save the draf
 
 ## Method 2: Google Ads API
 
-Requires a developer token from a Google Ads Manager (MCC) account. Basic Access is granted automatically; Standard Access (for production scale) requires a separate review. As of 2026, Google has a backlog on developer token applications.
+Requires a developer token from a Google Ads Manager (MCC) account. **New developer tokens start at Test Account Access** (test accounts only — no production mutations). To hit real accounts you must apply for **Basic Access** (usually ~5 business days) and, for high-volume production, **Standard Access** (a separate review after Basic). Google has a documented backlog on both tiers as of 2026.
 
 ### Prerequisites
 
 - Google Ads Manager account (MCC)
-- Developer token from API Center in your MCC
-- OAuth2 credentials (client ID + secret from Google Cloud Console)
+- Developer token from API Center in your MCC (starts at Test Access — apply for Basic before using with a real account)
+- OAuth2 credentials (client ID + secret from Google Cloud Console) — the desktop OAuth flow is easiest for a `refresh_token`; Google's `generate_user_credentials.py` script (part of the client library examples) walks you through it
 - `GOOGLE_ADS_CUSTOMER_ID` — 10-digit account ID without dashes
 
 Install the client library:
@@ -139,8 +142,9 @@ Set up `google-ads.yaml`:
 developer_token: YOUR_DEVELOPER_TOKEN
 client_id: YOUR_CLIENT_ID
 client_secret: YOUR_CLIENT_SECRET
-refresh_token: YOUR_REFRESH_TOKEN
+refresh_token: YOUR_REFRESH_TOKEN          # obtain via generate_user_credentials.py
 login_customer_id: YOUR_MCC_ID
+use_proto_plus: True                        # required — client init fails without it on modern versions
 ```
 
 ### Campaign setup prompt
@@ -148,15 +152,19 @@ login_customer_id: YOUR_MCC_ID
 ```
 Create a Google Ads campaign:
 - Customer ID: [your account ID]
-- Campaign type: SEARCH / DISPLAY / VIDEO / PERFORMANCE_MAX
+- Campaign type: SEARCH / DISPLAY / VIDEO / PERFORMANCE_MAX / DEMAND_GEN
 - Goal: AWARENESS / LEADS / WEBSITE_TRAFFIC / CONVERSIONS
 - Audience: [keywords, topics, custom intent, remarketing list]
 - Locations: [countries, cities]
 - Budget: $[amount] daily
-- Bidding: TARGET_CPA $[amount] or MAXIMIZE_CLICKS or TARGET_ROAS
+- Bidding: TARGET_CPA $[amount] / TARGET_SPEND (= "Maximize clicks") / TARGET_ROAS
 - Ad copy: [headlines, descriptions, final URL]
 - Dry run: yes/no
 ```
+
+**Budget unit:** Google Ads API expresses budgets in **micros** (`amount_micros`) — `$1 = 1,000,000 micros`, so `$50/day = 50000000`. Same convention as Reddit and X, opposite of Meta (cents) and TikTok (whole dollars). Missing the `_micros` suffix is a 6-order-of-magnitude foot-gun.
+
+**Bid-strategy enum:** the Google Ads API strategy for "Maximize clicks" is **`TARGET_SPEND`** (not `MAXIMIZE_CLICKS`). Other valid values: `TARGET_CPA`, `TARGET_ROAS`, `MAXIMIZE_CONVERSIONS`, `MAXIMIZE_CONVERSION_VALUE`, `MANUAL_CPC`, `MANUAL_CPV`, `MANUAL_CPM`. Don't invent enum names — read them from the client library's `BiddingStrategyTypeEnum`.
 
 ### Dry run mode
 
@@ -166,19 +174,23 @@ Google Ads API supports `validate_only: true` on mutate operations — Claude se
 Create a Google Search campaign for [audience] — validate only, don't submit.
 ```
 
-Claude returns: full mutate request payload, API validation result (policy checks, character limits, targeting conflicts), estimated weekly impressions.
+Claude returns: full mutate request payload and the API validation result (policy checks, character limits, targeting conflicts, enum validation). **`validate_only` returns errors only on failure and an empty response on success — it does NOT return forecasts.** For estimated impressions/clicks, use `KeywordPlanIdeaService` separately.
 
 ### Delete after QA
 
 ```
-Delete the Google Ads campaign with resource name [campaigns/XXXXXXXXX]
+Delete the Google Ads campaign with resource name customers/{customer_id}/campaigns/{campaign_id}
 ```
 
-Claude calls the CampaignService remove operation.
+Claude calls the `CampaignService.MutateCampaigns` remove operation on the full resource name (not the bare campaign ID — Google Ads resources are always scoped to a customer).
 
 ### Key settings Claude enforces
 
-- `network_settings.target_search_network: true`, `target_content_network: false` for Search (no Display Network bleed)
+- **Network settings for a Search campaign (Google Search only, no partners, no Display bleed):**
+  - `target_google_search: true` — target Google Search itself (the field the doc previously omitted)
+  - `target_search_network: false` — turn OFF Google Search **Partners** (this is the field that controls partners, despite the name; setting it to `true` — as an earlier version of this doc wrongly said — turns partners ON, contradicting Method 1's guidance)
+  - `target_content_network: false` — no Display Network bleed
+  - `target_partner_search_network: false` — off unless explicitly enabled by Google
 - Ad rotation: `OPTIMIZE`
 - Campaign status: `PAUSED` until you explicitly confirm launch
 - Conversion tracking: Claude warns if no conversion action is configured before launching a conversion-goal campaign

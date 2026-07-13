@@ -24,10 +24,10 @@ Claude drives [ads.x.com](https://ads.x.com) directly in Chrome — same pattern
 ### What Claude does
 
 Claude navigates X Ads Manager, creates a campaign, sets objective, audience, budget, and attaches a tweet or creates a new promoted-only post. Before activating, it:
-- Sets campaign status to **Paused** (won't serve, won't spend)
+- Builds the wizard through to **Review and launch**, then clicks **Save draft** — the campaign persists in `Draft` state (verified 2026-07-09). There is no pre-launch Paused toggle; the mechanism is Save-draft-from-Review.
 - Shows you a summary for review
-- Activates only on your explicit confirmation
-- Can delete the paused campaign after QA if you ask
+- Activates only on your explicit confirmation (Publish from Review-and-launch)
+- Can delete the draft campaign after QA if you ask
 
 ### Objective-specific behavior
 
@@ -80,22 +80,24 @@ For **Website traffic**, also provide:
 Delete the draft X campaign we just created — campaign name: [name]
 ```
 
-Claude hovers the campaign row, clicks the red trash icon, and confirms Delete.
+Claude hovers the campaign row, **reads back the campaign name from the row** to the operator, and clicks the red trash icon only after the operator confirms it matches the QA campaign name (the confirm modal is generic, so wrong-row-selected mistakes would not be caught by the modal alone).
 
 ---
 
-## Method 2: X Ads API
+## Method 2: X Ads API (v12, current as of 2026)
 
-The X Ads API is free once approved but requires a separate application from general X API access. Apply at [ads.x.com/help](https://ads.x.com/help). Approval typically takes a few weeks.
+The X Ads API is free once approved but requires a separate Ads API application (distinct from general X API access). Apply via the Ads API onboarding page ([docs.x.com/x-ads-api/getting-started](https://docs.x.com/x-ads-api/getting-started)) — approval typically takes a few weeks.
+
+**Base URL:** `https://ads-api.x.com/12/` (current — bump when X releases a new major).
 
 ### Prerequisites
 
 Once approved:
-- A developer app with Ads API (Standard Access) enabled
+- A developer app with Ads API access enabled
 - `TWITTER_ADS_ACCOUNT_ID` (in the URL at ads.x.com)
-- Consumer key/secret + access token/secret
+- OAuth 1.0a signing keys: consumer key/secret + access token/secret
 
-Set credentials in your environment:
+Set credentials in your environment (read from a secret manager, not paste them into a shell — history persists):
 
 ```
 TWITTER_CONSUMER_KEY=...
@@ -105,25 +107,25 @@ TWITTER_ACCESS_TOKEN_SECRET=...
 TWITTER_ADS_ACCOUNT_ID=...
 ```
 
-Optional: install the SDK:
-
-```bash
-pip install twitter-ads
-```
+Do **not** use the `twitter-ads` Python SDK — it was last released May 2022 against the retired v11 API and is unmaintained. Call the v12 REST endpoints directly with any OAuth 1.0a client (e.g. Python `requests-oauthlib`, Node `oauth-1.0a`).
 
 ### Campaign setup prompt
 
 ```
 Create an X promoted post campaign:
 - Account ID: [your account ID]
-- Objective: ENGAGEMENT / AWARENESS / WEBSITE_CLICKS / FOLLOWERS
+- Objective: ENGAGEMENTS / REACH / WEBSITE_CLICKS / FOLLOWERS / VIDEO_VIEWS / APP_INSTALLS
 - Tweet to promote: [tweet URL or ID]
 - Audience: [keywords, interests, follower lookalikes, demographics]
 - Locations: [countries]
-- Budget: $[amount] total or daily
+- Budget: $[amount] total or daily  (API expects micros — see note)
 - Start/end: [dates]
 - Dry run: yes/no
 ```
+
+**Objective enum note:** valid v12 values are `ENGAGEMENTS` (plural, not `ENGAGEMENT`), `REACH` (not `AWARENESS` — that objective was renamed years ago), `WEBSITE_CLICKS`, `FOLLOWERS`, `VIDEO_VIEWS`, `APP_INSTALLS`, `APP_ENGAGEMENTS`, `PREROLL_VIEWS`. Older names (`AWARENESS`, `ENGAGEMENT` singular) will be rejected.
+
+**Budget unit:** X Ads API expresses budgets in **micros of the local currency** — `total_budget_amount_local_micro` and `daily_budget_amount_local_micro`. For USD: `$1 = 1,000,000 micros`, so `$50/day = 50000000`. This mirrors Reddit's convention but differs from Meta (cents) and TikTok (whole dollars). A missing `_micro` suffix or a cents value is a 6-order-of-magnitude foot-gun — always sanity-check the number before submitting.
 
 ### Dry run mode
 
@@ -141,14 +143,14 @@ Claude returns: full API request body (campaign + line item + targeting + creati
 Delete the X campaign with ID [campaign_id] — API call only, don't confirm.
 ```
 
-Claude calls `DELETE /1/accounts/{account_id}/campaigns/{campaign_id}`.
+Claude calls `DELETE https://ads-api.x.com/12/accounts/{account_id}/campaigns/{campaign_id}` (OAuth 1.0a-signed). Deleting a campaign cascades to its line items, but not to reserved tweets — the promoted-only tweet stays around and can be reused.
 
 ### Key settings Claude enforces
 
-- `charge_by: ENGAGEMENT` — pay per engagement, not impression
-- Campaign status: `PAUSED` until you explicitly confirm launch
-- `optimization_preference: DEFAULT` unless you override bid strategy
+- **Scope `charge_by` to the objective**: `ENGAGEMENT` billing applies only to the Engagements objective. Reach, Website traffic, Sales, Video views use `IMPRESSION` (CPM); App installs uses `APP_INSTALLS`; Followers uses `FOLLOW`. Don't apply a blanket ENGAGEMENT charge — it's objective-scoped and the API rejects mismatched pairs.
+- Campaign status: `PAUSED` until you explicitly confirm launch. Note: X's line-item `entity_status` uses `ACTIVE` / `PAUSED` / `DELETED`.
+- `optimization_preference: DEFAULT` unless you override bid strategy.
 
-### Algorithm note (May 2026 X source release)
+### Algorithm note (January 2026 X source release)
 
-Per the X algorithm breakdown: threads are penalized by author diversity decay (2nd post = 55% of score, 3rd = 32.5%). For organic posts, single tweets outperform threads. For paid: promoted posts are injected directly and bypass feed scoring penalties — threads vs. single post doesn't affect paid performance.
+Per the X algorithm breakdown (xai-org/x-algorithm, January 2026): threads are penalized by author diversity decay (2nd post = 55% of score, 3rd = 32.5%). For organic posts, single tweets outperform threads. For paid: promoted posts are injected directly and bypass feed scoring penalties — threads vs. single post doesn't affect paid performance.

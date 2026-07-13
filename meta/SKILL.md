@@ -54,7 +54,7 @@ Claude navigates Ads Manager, fills in campaign objective, audience, placements,
 | "Publish" vs draft | Campaign auto-saves as draft — only click Publish when you confirm launch |
 | Coordinate click scaling | Screenshot px ≈ CSS px × 0.61 (viewport is 2542 CSS px wide on a 1552px screenshot) |
 | "Malfunctioning browser extension" warning | Meta detects the Claude for Chrome extension — dismiss with OK, then continue normally |
-| Delete draft campaign | Navigate to campaign list → "Discard drafts" top-right (discards all unsaved changes in the account) |
+| Delete draft campaign | ⚠️ **Destructive/account-wide**: the top-right "Discard drafts" button discards **every unsaved draft in the account**, not just the QA campaign. Do NOT use for cleanup unless the account has no other in-progress drafts. Safe path is Method 2's `meta ads campaign delete <ID> --force` (deletes only the named campaign and its children). Requires an explicit human "yes, discard all drafts" if this button is ever the only route. |
 | Row-level `...` dropdown | Hover campaign row → last button (aria-label contains zero-width space: "Open Dropdown​") → shows Analyze / View history / Rules — no Delete option here |
 | Leads: Terms of Service blocker | Page owner must accept Facebook's Lead Generation Terms of Service before lead ads can run — Claude flags this and shows the "View terms" button |
 | Sales: Pixel required | Sales campaigns require a Dataset (Meta Pixel) with at least one conversion event configured — Claude shows "Set up conversion event" if none exist |
@@ -77,11 +77,13 @@ For **Leads** campaigns, confirm the Facebook Page has accepted Lead Generation 
 
 ### Delete after QA
 
+Method 1 (browser) has **no safe per-campaign delete for drafts** — the row `…` dropdown has no Delete option (see gotchas table), and the top-right "Discard drafts" is account-wide destructive. **Route Method 1 cleanup through Method 2's CLI delete** instead:
+
 ```
-Delete the draft Meta campaign we just created — campaign name: [name]
+meta ads campaign delete <CAMPAIGN_ID> --force
 ```
 
-Claude navigates to the campaign, selects it, and deletes it from the campaign list.
+If Method 2 isn't set up on the account, either wait for the draft to age off or manually publish it PAUSED first (which then exposes a normal Remove control) — never rely on "Discard drafts" for QA cleanup because it wipes every other unsaved draft in the account too.
 
 ---
 
@@ -103,11 +105,16 @@ Claude calls the Marketing API through the command-line tool published as [`meta
    meta --version              # -> meta, version 1.1.0
    ```
 
-2. **Authenticate** via the `ACCESS_TOKEN` environment variable (token needs `ads_management`, `ads_read`, `business_management` scopes; short-lived tokens expire in ~1–24h, long-lived ~60 days):
+2. **Authenticate** via the `ACCESS_TOKEN` environment variable (token needs `ads_management`, `ads_read`, `business_management` scopes; short-lived tokens expire in ~1–24h, long-lived ~60 days; System User tokens don't expire — see the token-refresh subsection below).
+
+   Read the token from a file or password manager, not by pasting into your shell (shell history persists secrets):
 
    ```bash
-   export ACCESS_TOKEN="EAA...your_token..."
-   meta auth status            # -> Authenticated (token: EAA...) — presence only, not validity
+   # Read from ~/.config/meta-ads-cli/config.json (populated by the npm fallback CLI's `meta-ads auth login`)
+   export ACCESS_TOKEN="$(python3 -c "import json;print(json.load(open('$HOME/.config/meta-ads-cli/config.json'))['auth']['access_token'])")"
+   # or from macOS Keychain:
+   # export ACCESS_TOKEN="$(security find-generic-password -s meta-ads-token -w)"
+   meta auth status            # -> Authenticated (token: EAA...) — reports presence, NOT validity
    ```
 
    > `meta auth status` only checks that a token is *present*, not that it is still valid. An expired token still reports "Authenticated" and fails at the first API call with `API error (190): Session has expired`. Treat a real command as the true auth check.
@@ -138,34 +145,75 @@ meta ads adset create <CAMPAIGN_ID> \
 - Budget is passed in **cents**: `$10 daily = --daily-budget 1000`.
 - Objective enum: `OUTCOME_APP_PROMOTION`, `OUTCOME_AWARENESS`, `OUTCOME_ENGAGEMENT`, `OUTCOME_LEADS`, `OUTCOME_SALES`, `OUTCOME_TRAFFIC`. Engagement = `OUTCOME_ENGAGEMENT`.
 - `--status` defaults to `PAUSED` on create — nothing serves until you set `ACTIVE`.
-- **No `--dry-run` flag.** Unlike the third-party npm tool, the official CLI has no built-in validate/no-op mode. The QA path is: create PAUSED (a real object that can't serve), verify, then delete.
+- **No `--dry-run` flag.** Unlike the third-party npm tool, the PyPI CLI has no built-in validate/no-op mode. The QA path is: create PAUSED (a real object that can't serve), verify, then delete.
 - CBO vs ABO: put `--daily-budget`/`--lifetime-budget` on the **campaign** (CBO) and omit it on the ad set; or omit it on the campaign and set it per ad set (ABO). Don't set both.
-- Ad-set targeting: `--targeting-countries US` is a shortcut for geo only; for age + interests pass the full spec via `--targeting @file.json` (e.g. `age_min`/`age_max`, `geo_locations`, `flexible_spec` interests, `targeting_automation.advantage_audience: 0`).
+- Ad-set targeting: `--targeting-countries US` is a shortcut for geo only; for age + interests + placement + Advantage+-off, pass the full spec via `--targeting @file.json` (see JSON example below). The shortcut path does NOT respect the `advantage_audience: 0` or placement settings — those only apply in the JSON path (or you can pass `--no-advantage-audience` on the ad-set create for that one setting).
+- **Placement restrictions must be inside the targeting JSON**: the PyPI CLI has no placement flag. To restrict to Facebook Feed only (no Audience Network / Reels / Stories / Instagram): add `publisher_platforms: ["facebook"]` and `facebook_positions: ["feed"]` to `--targeting @file.json`. Without these, ad sets default to Advantage+ placements — including Audience Network.
+
+**Example `targeting.json` with Advantage+ off and placement restricted:**
+```json
+{
+  "age_min": 25, "age_max": 55,
+  "geo_locations": {"countries": ["US"]},
+  "flexible_spec": [{"interests": [{"id": "6003107902433", "name": "Financial technology (fintech)"}]}],
+  "publisher_platforms": ["facebook"],
+  "facebook_positions": ["feed"],
+  "device_platforms": ["mobile", "desktop"],
+  "targeting_automation": {"advantage_audience": 0}
+}
+```
 
 ### Campaign setup prompt
 
 ```
-Create a Meta ads campaign via the official meta ads CLI:
+Create a Meta ads campaign via the meta ads CLI:
 - Ad account: act_[your account ID]
 - Objective: OUTCOME_AWARENESS / OUTCOME_ENGAGEMENT / OUTCOME_TRAFFIC / OUTCOME_SALES
 - Audience: [age range, locations, interests, custom audiences]
 - Budget: $[amount] daily or lifetime
-- Placement: Feed only (no Audience Network)
+- Placement: pass as targeting JSON (publisher_platforms + facebook_positions) — the CLI has no placement flag
+- Special-ad-category: [FINANCIAL_PRODUCTS_SERVICES for fintech/finance ads; HOUSING/EMPLOYMENT/CREDIT/ISSUES_ELECTIONS_POLITICS/ONLINE_GAMBLING_AND_GAMING if applicable; otherwise omit]
 ```
 
 ### Delete after QA
 
-The official CLI has a real `delete` that **cascades** (removes the campaign and all its child ad sets and ads) — no need to delete children first:
+The CLI has a real `delete` that **cascades** — removing the campaign also removes its child ad sets and ads:
 
 ```bash
-meta ads campaign delete <CAMPAIGN_ID> --force   # --force skips the confirm prompt
+# 1. Confirm you have the right ID + it's PAUSED
+meta ads campaign get <CAMPAIGN_ID>          # -> verify name and status: PAUSED
+
+# 2. Delete (Claude echoes the name back to the operator before running --force)
+meta ads campaign delete <CAMPAIGN_ID>       # interactive: prompts to confirm
+# or, only after echoing the campaign name and confirming it's the QA one:
+meta ads campaign delete <CAMPAIGN_ID> --force
 ```
+
+⚠️ **`--force` is irreversible and cascades.** Claude requires an ID-match guard: read back the campaign name + status, echo them to the operator, and only run `--force` after the operator confirms it's the intended QA campaign (not a real one with a similar ID).
 
 ### Key settings Claude enforces
 
-- `--special-ad-categories` set only for regulated ads (housing/credit/employment/politics); omit otherwise.
+- **Special-ad-categories** (`--special-ad-categories`): set for any regulated category. Real enum from the CLI: `HOUSING`, `EMPLOYMENT`, `CREDIT`, **`FINANCIAL_PRODUCTS_SERVICES`**, `ISSUES_ELECTIONS_POLITICS`, `ONLINE_GAMBLING_AND_GAMING`. **Financial-services and crypto/fintech ads must declare `FINANCIAL_PRODUCTS_SERVICES`** or Meta will disapprove them — this applies to almost every Eco-style campaign. Omit only when the ad is genuinely outside all regulated categories.
 - Campaign status: `PAUSED` until you explicitly confirm launch.
-- Advantage+ audience expansion off unless asked (`targeting_automation.advantage_audience: 0` in the targeting spec).
+- Advantage+ audience expansion off unless asked (`targeting_automation.advantage_audience: 0` in the targeting JSON, or `--no-advantage-audience` on the ad-set create).
+- Placement restricted to Facebook Feed (or the placements you specify) via the targeting JSON; do not rely on Advantage+ defaults if you want to exclude Audience Network.
+
+### Token refresh (long-lived tokens)
+
+Access tokens generated from Graph API Explorer are short-lived (1–24h). For anything longer than a single session, exchange for a **long-lived (60-day) user token** or use a **System User token** (permanent for a Business Manager):
+
+```bash
+# Long-lived user token: exchange short-lived for 60-day
+curl -sG "https://graph.facebook.com/v21.0/oauth/access_token" \
+  --data-urlencode "grant_type=fb_exchange_token" \
+  --data-urlencode "client_id=$FB_APP_ID" \
+  --data-urlencode "client_secret=$FB_APP_SECRET" \
+  --data-urlencode "fb_exchange_token=$SHORT_LIVED_TOKEN"
+```
+
+For automation, prefer a Business Manager **System User** token (never expires) — create under Business Settings → Users → System Users → Generate New Token, and grant it Ads Management + Read access on the ad account.
+
+`meta auth status` reports token *presence*, not validity — always treat a real API call as the true auth check.
 
 ### Fallback: third-party npm `meta-ads` CLI
 
@@ -181,3 +229,16 @@ Create 3 Meta ad sets under campaign [ID]:
 ```
 
 Claude creates all three in sequence, confirms each before creating the next.
+
+### Handling partial failures (orphan cleanup)
+
+Multi-step create sequences (`campaign` → `adset` → `ad`) can fail partway — e.g. the ad set is rejected but the campaign was already created. Rules Claude follows:
+
+1. Capture the parent object's ID immediately after each successful create (`meta ads campaign create -o json`).
+2. If any child create fails, the campaign delete is cascade-safe: `meta ads campaign delete <CAMPAIGN_ID> --force` removes it and any child objects that did get created.
+3. Never leave an activated campaign behind after a partial failure — even a PAUSED orphan can be turned live by mistake later.
+4. If the CLI itself dies before the campaign ID is captured, `meta ads campaign list -o json | grep <name>` finds it by name; the QA name convention (`QA_TEST_…`) makes this reliable.
+
+### Ad review SLA
+
+Once activated, Meta ads enter review — typically 15 min to a few hours, but **crypto/fintech and other regulated categories can take 24h+** and may be rejected on discretionary grounds. Do not schedule launch windows that assume instant serving. Check status via `meta ads ad get <AD_ID>` — `IN_PROCESS` = under review, `ACTIVE` = serving, `DISAPPROVED` = rejected (readable reason in `issues_info`).
