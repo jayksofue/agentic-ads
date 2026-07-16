@@ -45,6 +45,8 @@ Every platform in this skill drives its Ads Manager UI in your real Chrome (as a
 
 ## Platform guides
 
+- [Guided intake (start here) →](./intake/SKILL.md) — the 10-question walkthrough that runs before any campaign
+- [Verified routing tables →](./intake/routing-tables.md) — goal→enum maps, budget units + minimums, regulated-category rules, creative specs (sourced against 2026-07-12 primary docs)
 - [LinkedIn setup →](./linkedin/SKILL.md)
 - [Meta setup →](./meta/SKILL.md)
 - [X setup →](./x/SKILL.md)

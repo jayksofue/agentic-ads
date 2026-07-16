@@ -44,23 +44,16 @@ Every platform in this skill drives its Ads Manager UI in your real Chrome (as t
 
 1. Open Claude Code
 2. Say: **"run agentic-ads"** (the frontmatter registers the skill by name)
-3. Claude will ask:
-   - Which platform?
-   - Campaign objective (awareness / engagement / traffic / conversions / video views / etc. — platform-specific)?
-   - Ad format (single image / video / carousel / document / etc. — platform-specific)?
-   - Who's the audience?
-   - What's the budget and date range?
-4. Claude builds the campaign PAUSED/DRAFT (never live), shows a summary, and activates only on explicit "yes, launch" from you
+3. Claude walks you through the **[10-question guided intake](./intake/SKILL.md)**: what you're promoting, goal, audience, geo, budget + timing, creative, destination, tone, avoids. Plus 1–2 platform-specific questions (LinkedIn: job function/seniority; Reddit: subreddits; etc.).
+4. Before any create call, Claude runs **feasibility gates**: platform budget minimums, pixel + volume for conversion goals, regulated-category approval status, creative-format match, ad-account access level. Fails loud with the fix, not a warning.
+5. Claude builds the campaign PAUSED/DRAFT (never live), echoes back a full confirmation summary — including every default applied — and activates only on explicit `launch` from you.
 
-## Platform setup guides
+## Skill map
 
-- [LinkedIn →](./linkedin/SKILL.md)
-- [Meta →](./meta/SKILL.md)
-- [X →](./x/SKILL.md)
-- [Google →](./google/SKILL.md)
-- [Reddit →](./reddit/SKILL.md)
-- [TikTok →](./tiktok/SKILL.md)
-- [Copy generation + anti-slop →](./copy/SKILL.md)
+- **[intake/SKILL.md](./intake/SKILL.md)** — the guided walkthrough (entry point). 10 core questions + platform-specific follow-ups + feasibility gates.
+- **[intake/routing-tables.md](./intake/routing-tables.md)** — verified 2026-07-12 reference: goal→enum maps, budget units, minimums, cold-audience-expansion flag names, regulated-category rules, creative specs. Every claim source-cited.
+- **[LinkedIn](./linkedin/SKILL.md)** · **[Meta](./meta/SKILL.md)** · **[X](./x/SKILL.md)** · **[Google](./google/SKILL.md)** · **[Reddit](./reddit/SKILL.md)** · **[TikTok](./tiktok/SKILL.md)** — per-platform mechanics: how the browser/API path works, gotchas, delete-after-QA.
+- **[Copy generation + anti-slop](./copy/SKILL.md)** — copy generation + platform-specific character limits + slop check.
 
 ## Dry run mode
 
