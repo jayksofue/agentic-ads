@@ -1,25 +1,30 @@
 ---
 name: agentic-ads-google
-description: Deploy Google Ads campaigns via browser automation (ads.google.com) or the Google Ads API. Create/draft flow was live-QA'd 2026-07-09. Note saved drafts have no UI delete — QA path is Discard-on-exit. Use when working with Google Ads specifically; loaded by the parent agentic-ads skill.
+description: Launch Google Ads campaigns through ads.google.com in the browser, or through the Google Ads API for bulk work. The create-and-draft flow was live-verified. Important cleanup note — saved drafts have no delete option in the Google Ads UI, so the correct dry-run path is "Discard on exit" (never save the draft). Use this when launching Google Ads specifically; loaded automatically by the parent agentic-ads skill.
 ---
 
 # Google Ads — Skill
 
-Claude can run Google campaigns two ways — via browser automation (works today, no API approval needed) or via the Google Ads API (requires a developer token). Both support draft/paused mode.
+Two ways to launch Google campaigns:
 
-> **QA status: 🚧 Create/draft flow verified live; draft deletion is a known gap.** Method 1's create → name → Save-as-draft flow was live-verified end-to-end (Search campaign created via "Create a campaign without guidance" → name entered via nativeSetter → "Save as a campaign draft?" modal → Saved → draft confirmed in the campaigns table under "Drafts in progress" with a real campaign ID; nothing served or spent).
+- **Through the browser** — Claude drives Google Ads directly in Chrome. Works for any active Google Ads account, no developer setup needed.
+- **Through the Google Ads API** — faster for bulk work. Requires a developer token, which is approval-gated by Google (about 5 business days for the first tier).
+
+Both paths keep campaigns Paused or in a Draft state until you explicitly say "launch."
+
+> **Status: 🚧 Browser create/draft flow verified; deleting a saved draft is a known gap.** The full build-a-draft path was live-verified end-to-end: create a Search campaign via "Create a campaign without guidance" → name it → save as a draft → confirm it saved to the "Drafts in progress" list with a real campaign ID. Nothing served or spent.
 >
-> **Important cleanup finding:** once a "draft in progress" is **saved**, it has **no delete control in the campaigns UI** — no inline trash on the row, no actions column, the bulk **Edit is disabled** for drafts, the builder has no delete button, and auto-save means clicking the close (X) no longer prompts the Save/Discard modal. So for QA, **click Discard in the exit modal instead of Save** (the documented cleanup) — do NOT Save the draft. To remove an already-saved draft, use Google Ads Editor / the API, or finish+publish it as a PAUSED campaign (real campaigns do expose a Remove status control) and then remove it.
+> **Important cleanup finding.** Once a "draft in progress" is **saved**, Google gives you **no way to delete it from the campaigns list** — no trash icon, no actions column, the bulk-edit button is disabled for drafts, the builder itself has no delete button, and the "Save as draft?" prompt only appears if you've made changes since the last auto-save. So for a dry run: **click Discard in the exit dialog — never click Save.** To remove a draft that was already saved, you need Google Ads Editor, the Google Ads API, or you have to finish + publish it as a Paused campaign first (real campaigns do expose a Remove control), then delete that.
 >
-> Note: if you hit a suspended/canceled ad account, Google disables "New campaign" entirely — switch accounts via the account selector. Method 2 (Google Ads API) remains unverified: no developer token configured. Note that **Basic Access is also approval-gated** (~5-business-day review); new developer tokens start at Test Account Access only.
+> If you land on an ad account that's suspended or canceled, Google disables the "New campaign" button entirely — switch to a healthy account via the account selector. The API path is unverified from this environment (no developer token set up here). New developer tokens start at **Test Account Access** only; **Basic Access requires a separate application** with about a 5-business-day review.
 >
-> **⚠️ Cleanup circular-dependency:** the "finish + publish PAUSED, then remove" cleanup path for a saved draft was tested and hit **Google's "Confirm it's you" identity-verification modal at Publish** — an authentication gate Claude cannot pass. That means for accounts with the identity gate on, the only fully-agentic recovery for a saved draft is Google Ads Editor or the API (once configured). For QA runs, prevent the problem: **Discard on exit; never Save**.
+> **⚠️ Cleanup gotcha.** The "finish + publish Paused, then remove" cleanup route was tested and it hits Google's **"Confirm it's you" identity-verification prompt** at Publish — that's an authentication gate Claude can't pass. Practically: for accounts with that gate on, the only automated cleanup path for a saved draft is Google Ads Editor or the API. The clean approach is to not save the draft in the first place — **Discard on exit; never Save.**
 
 ---
 
-## Method 1: Browser automation (no API required)
+## Method 1: Through the browser (no API setup needed)
 
-Claude drives [ads.google.com](https://ads.google.com) directly in Chrome — same pattern as the LinkedIn skill.
+Claude drives [ads.google.com](https://ads.google.com) directly in Chrome — same pattern as the other browser-driven platforms in this skill.
 
 ### Prerequisites
 
@@ -120,9 +125,16 @@ For QA: build the campaign, review it, then Discard on exit (don't Save the draf
 
 ---
 
-## Method 2: Google Ads API
+## Method 2: The Google Ads API
 
-Requires a developer token from a Google Ads Manager (MCC) account. **New developer tokens start at Test Account Access** (test accounts only — no production mutations). To hit real accounts you must apply for **Basic Access** (usually ~5 business days) and, for high-volume production, **Standard Access** (a separate review after Basic). Google has a documented backlog on both tiers as of 2026.
+For bulk work or repeatable setups, you can drive Google through their Ads API. Requires a developer token from a Google Ads Manager (MCC) account, plus a Google Cloud project for OAuth2.
+
+**Google Ads API access levels — worth understanding before you apply:**
+- **Test Account Access** — what every new developer token gets automatically. You can only run against Google's *test* ad accounts, not a real one.
+- **Basic Access** — production access with rate limits, enough for most single-brand advertising. **Requires an application and roughly 5 business days of review by Google.** New tokens do NOT auto-upgrade to this.
+- **Standard Access** — high-volume production. Requires Basic first, plus a separate review.
+
+Google has an ongoing backlog on both approval tiers as of 2026, so plan lead time.
 
 ### Prerequisites
 

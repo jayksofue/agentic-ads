@@ -1,19 +1,24 @@
 ---
 name: agentic-ads-tiktok
-description: Deploy TikTok ad campaigns via browser automation (ads.tiktok.com) or the TikTok Marketing API v1.3. Documented not yet live-verified. Video-first — expect higher minimum budgets (~$50/day campaign). Use when working with TikTok ads specifically; loaded by the parent agentic-ads skill.
+description: Launch TikTok ad campaigns through ads.tiktok.com in the browser, or through TikTok's Marketing API for bulk work. Documented but not yet live-verified from this environment. TikTok is video-first (silent creative underperforms significantly) and enforces higher minimum budgets than the other platforms (roughly $50/day at the campaign level). Every campaign is created Paused; nothing goes live without an explicit "launch" from the user. Use this when launching TikTok ads specifically; loaded automatically by the parent agentic-ads skill.
 ---
 
 # TikTok Ads — Skill
 
-Claude can run TikTok campaigns two ways — via browser automation (works today, no API approval needed) or via the TikTok Marketing API (requires a developer app and approval). Both support a paused state so you can review before spending.
+Two ways to launch TikTok campaigns:
 
-> **QA status (2026-07-09): 📝 Documented, not yet verified end-to-end.** No TikTok Ads credentials are configured in this environment, and the Marketing API path requires a developer app that TikTok reviews before granting production access. Field names, budget units, and enums below are taken from the TikTok Marketing API v1.3 reference and its official SDK — treat them as unverified until a live run confirms them. The browser path (Method 1) needs the Claude for Chrome extension logged into TikTok Ads Manager.
+- **Through the browser** — Claude drives TikTok Ads Manager directly in Chrome. Works for anyone with a TikTok for Business account.
+- **Through TikTok's Marketing API** — faster for bulk work. Requires a TikTok developer app that goes through TikTok's review process.
 
-TikTok skews younger and consumer; B2B fit is weaker than LinkedIn/Reddit, but its Marketing API is mature and it scales. Judge on cost per result, and expect higher minimum budgets than the other platforms (see gotchas).
+Both paths keep the campaign in a Paused state until you say launch.
+
+> **Status: 📝 Documented, not yet verified end-to-end.** The API-side details below have not been end-to-end tested from this environment — no TikTok Ads credentials are configured here, and the Marketing API path requires a developer app that TikTok reviews before granting production access. Setting names, budget formats, and available options below come from TikTok's Marketing API v1.3 reference and their official SDK; treat them as accurate but confirm on a live run. The browser path also needs the Claude for Chrome extension logged into TikTok Ads Manager.
+
+**Who TikTok is for.** The audience skews younger and consumer — B2B usually works better on LinkedIn or Reddit. TikTok is video-first (silent creative significantly underperforms), and the platform enforces **higher minimum budgets** than the others (roughly $50/day at the campaign level — see the gotchas table below). If you're spending less than about $1,500/month, another platform will likely give you better results.
 
 ---
 
-## Method 1: Browser automation (no API required)
+## Method 1: Through the browser (no API setup needed)
 
 Claude drives [ads.tiktok.com](https://ads.tiktok.com) directly in Chrome — same pattern as the LinkedIn skill.
 
@@ -36,7 +41,7 @@ Claude navigates Ads Manager, creates the campaign, sets objective, ad group tar
 
 ```
 Advertiser account
-└── Campaign      ← objective, campaign-level budget (if CBO on)
+└── Campaign      ← objective, campaign-level budget (if Campaign Budget Optimization / CBO is on)
     └── Ad Group  ← targeting, bid, schedule, placements, optimization goal, ad-group budget
         └── Ad    ← the creative (video + text + CTA + destination)
 ```
@@ -54,7 +59,7 @@ TikTok's ad-group/campaign objectives: **Reach**, **Traffic**, **Video Views**, 
 | React inputs ignore `.value =` assignment | Uses nativeSetter pattern: `Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set` |
 | Smart Targeting (audience + interest/behavior expansion) | TikTok's equivalent of Meta Advantage+ / LinkedIn audience expansion. **Fields split into two booleans** (both opt-in, default off): `smart_audience_enabled` and `smart_interest_behavior_enabled`. The older `auto_targeting_enabled` field was **deprecated June 2024** — cannot be enabled anymore; ignore it. Keep both smart-targeting fields off for cold-audience runs |
 | Pangle + other placements on by default | Under Placements, switch from Automatic to **Select placement** and choose TikTok only if you don't want the Pangle audience network / News Feed apps |
-| Minimum budget enforced | TikTok enforces higher minimums than other platforms — roughly **$50/day campaign** (CBO) and **$20/day ad group**. A budget below the minimum blocks the ad group |
+| Minimum budget enforced | TikTok enforces higher minimums than the other platforms — roughly **$50/day at the campaign level** (when Campaign Budget Optimization / CBO is on) and **$20/day at the ad-group level** (when the budget lives there instead). Anything below the minimum gets rejected. |
 | Creative required to publish | TikTok ads are video-first. You can promote an existing post (**Spark Ad**) or upload a video; a plain post won't publish without a video/image |
 | Identity / TikTok account link | Spark Ads require authorizing the TikTok post via a video code / account link before it can be promoted |
 | Delete draft/paused campaign | Campaigns list → select the campaign → status menu → **Delete** (or the row's delete/trash action) → confirm |
@@ -96,9 +101,9 @@ Claude selects the campaign in the list and deletes it via the status/row action
 
 ---
 
-## Method 2: TikTok Marketing API
+## Method 2: TikTok's Marketing API
 
-Programmatic path — faster for bulk setup, no UI. Requires a developer app and TikTok's review.
+For bulk work or repeatable setups, you can drive TikTok through their Marketing API instead of the browser. Requires a TikTok developer app that has to go through TikTok's review before it can create real production campaigns (there's a sandbox for testing while you wait).
 
 - **Base URL:** `https://business-api.tiktok.com/open_api/v1.3/`
 - **Docs:** TikTok for Business API portal (`business-api.tiktok.com/portal/docs`)

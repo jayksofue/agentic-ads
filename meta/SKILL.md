@@ -1,17 +1,22 @@
 ---
 name: agentic-ads-meta
-description: Deploy Meta (Facebook/Instagram) ad campaigns via browser automation (ads.facebook.com) or the Marketing API. Two CLI paths: the anonymous PyPI `meta-ads` (binary `meta`, referenced in Meta's April 2026 Ads CLI blog post) and the third-party npm `meta-ads` fallback. Every create defaults to PAUSED. Use when working with Meta ads specifically; loaded by the parent agentic-ads skill.
+description: Launch Meta (Facebook / Instagram) ad campaigns in Ads Manager, either through the browser or through Meta's Marketing API. Every campaign is created as Paused — nothing goes live without an explicit "launch" from the user. Handles Meta's Campaign → Ad Set → Ad hierarchy, budget-optimization modes (CBO / ABO), Advantage+ audience toggles, and regulated-category declarations for financial services / crypto. Use this when launching Meta ads specifically; loaded automatically by the parent agentic-ads skill.
 ---
 
 # Meta Ads — Skill
 
-Claude can run Meta campaigns two ways — via the Marketing API (no UI needed) or via browser automation (no API setup needed). Both support draft/paused mode so you can review before spending.
+Two ways to launch Meta campaigns:
+
+- **Through the browser** — Claude drives Meta Ads Manager directly in Chrome. Easiest to set up (no developer account needed), and works for everyone with a Meta ad account.
+- **Through Meta's Marketing API command-line tool** — faster for bulk work and repeatable campaigns. Requires a one-time setup of a Meta developer app + an access token.
+
+Both paths leave the campaign Paused for review; neither runs anything live until you say so.
 
 ---
 
-## Method 1: Browser automation (no API required)
+## Method 1: Through the browser (no API setup needed)
 
-Same pattern as the LinkedIn skill — Claude drives Meta Ads Manager directly in Chrome.
+Claude drives Meta Ads Manager directly in Chrome — same pattern as the LinkedIn skill.
 
 ### Prerequisites
 
@@ -88,14 +93,13 @@ If Method 2 isn't set up on the account, either wait for the draft to age off or
 
 ---
 
-## Method 2: Marketing API via the `meta-ads` PyPI CLI (`meta ads`)
+## Method 2: Meta's Marketing API command-line tool
 
-Claude calls the Marketing API through the command-line tool published as [`meta-ads` on PyPI](https://pypi.org/project/meta-ads/) (binary `meta`, invoked as `meta ads …`). This is the CLI referenced in Meta's April 2026 developer-blog post [Introducing Ads CLI](https://developers.facebook.com/blog/post/2026/04/29/introducing-ads-cli/) — the blog is a verified public Meta post and the CLI's `meta ads campaign create --name … --objective OUTCOME_SALES --daily-budget 5000` matches the blog's examples verbatim, but the PyPI package's author/repo fields are blank (proprietary license, Cython-compiled `.so` modules). Treat it as **blog-referenced**, not formally attributed to Meta — it works, but if you need signed provenance, use the third-party npm `meta-ads` fallback below (also unofficial but with a public repo).
+For faster, repeatable setups (or bulk work across many campaigns), Claude uses Meta's Marketing API through a command-line tool called [`meta-ads`](https://pypi.org/project/meta-ads/). This is the tool referenced in Meta's April 2026 developer blog post [Introducing Ads CLI](https://developers.facebook.com/blog/post/2026/04/29/introducing-ads-cli/). The commands match Meta's blog examples exactly, though the package listing on PyPI doesn't publicly attribute it to Meta (blank author field, proprietary license) — so this doc treats it as "referenced by Meta's official blog" rather than formally Meta-attributed. If you need signed provenance, there's also a third-party alternative documented at the bottom of this file with a public GitHub repo.
 
-> **QA status (2026-07-10): tool verified; live create→delete re-run pending a fresh token.**
-> The official CLI was installed and exercised directly: `meta --version` (1.1.0), `meta auth status`, and the full `campaign`/`adset`/`delete` command surface + flags + enums were confirmed from the binary (not from docs). Auth wiring works — the token was accepted; the only failure was the reused access token having **expired** (it was a short-lived Jul-4 token). The full paused-create → delete cycle will be re-confirmed once a fresh token is provided, then this banner flips to ✅.
+> **Status: tool verified, one live end-to-end run pending.** The command-line tool was installed and exercised directly (every command, flag, and campaign-setting name was pulled from the tool itself, not from docs). The one thing not re-run: the full paused-create → delete cycle with a fresh access token. The access token from the earlier test session had expired by the time the re-run was attempted. Once a fresh token is provided, that final check runs and the status flips to ✅.
 >
-> A prior end-to-end run **did** pass on 2026-07-04 using the *third-party* npm `meta-ads` CLI (see fallback below): campaign `52513568511696` + ad set `52513568917696` created PAUSED on `act_15495450`, then deleted. We are standardizing on the official Python CLI because the third-party npm tool can be unpublished without notice — exactly what happened to the earlier `cli-meta-ads` (unpublished 2026-05-28) and the never-real `@anthropic-ai/mcp-server-meta` (404).
+> An earlier full end-to-end run **did** pass through a third-party alternative tool (documented at the bottom of this file): a campaign was created Paused, then deleted, on a real Meta ad account. This doc recommends Meta's official-blog-referenced tool as the primary path because third-party npm packages can vanish without notice (that's exactly what happened to two earlier alternatives — `cli-meta-ads` was unpublished from npm, and `@anthropic-ai/mcp-server-meta` was never actually published at all).
 
 ### Prerequisites
 
@@ -147,7 +151,10 @@ meta ads adset create <CAMPAIGN_ID> \
 - Objective enum: `OUTCOME_APP_PROMOTION`, `OUTCOME_AWARENESS`, `OUTCOME_ENGAGEMENT`, `OUTCOME_LEADS`, `OUTCOME_SALES`, `OUTCOME_TRAFFIC`. Engagement = `OUTCOME_ENGAGEMENT`.
 - `--status` defaults to `PAUSED` on create — nothing serves until you set `ACTIVE`.
 - **No `--dry-run` flag.** Unlike the third-party npm tool, the PyPI CLI has no built-in validate/no-op mode. The QA path is: create PAUSED (a real object that can't serve), verify, then delete.
-- CBO vs ABO: put `--daily-budget`/`--lifetime-budget` on the **campaign** (CBO) and omit it on the ad set; or omit it on the campaign and set it per ad set (ABO). Don't set both.
+- **Where the budget lives (CBO vs. ABO).** Meta lets you set the budget in two places:
+  - **Campaign Budget Optimization (CBO)** — put the budget on the *campaign*, and Meta distributes it across the ad sets automatically. Set `--daily-budget` or `--lifetime-budget` on the campaign; omit budget on the ad sets.
+  - **Ad-set Budget Optimization (ABO)** — leave the campaign budget off, and set a budget per ad set instead. Better when you want strict control per audience.
+  - Don't set both — Meta rejects it.
 - Ad-set targeting: `--targeting-countries US` is a shortcut for geo only; for age + interests + placement + Advantage+-off, pass the full spec via `--targeting @file.json` (see JSON example below). The shortcut path does NOT respect the `advantage_audience: 0` or placement settings — those only apply in the JSON path (or you can pass `--no-advantage-audience` on the ad-set create for that one setting).
 - **Placement restrictions must be inside the targeting JSON**: the PyPI CLI has no placement flag. To restrict to Facebook Feed only (no Audience Network / Reels / Stories / Instagram): add `publisher_platforms: ["facebook"]` and `facebook_positions: ["feed"]` to `--targeting @file.json`. Without these, ad sets default to Advantage+ placements — including Audience Network.
 

@@ -1,6 +1,6 @@
 ---
 name: agentic-ads-linkedin
-description: Deploy LinkedIn ad campaigns via browser automation of Campaign Manager. Creates as Draft, activates only on explicit confirmation. LinkedIn's hierarchy is Campaign Group → Campaign → Ad (no "ad set" object). Use when working with LinkedIn ads specifically; loaded by the parent agentic-ads skill.
+description: Launch LinkedIn ad campaigns through Campaign Manager (in the browser). Every campaign is created as a Draft — nothing goes live without an explicit "launch" from the user. Handles LinkedIn's Campaign Group → Campaign → Ad hierarchy (note: no "ad set" object on LinkedIn, unlike Meta). Use this when launching LinkedIn ads specifically; loaded automatically by the parent agentic-ads skill.
 ---
 
 # LinkedIn Ads — Skill
@@ -24,9 +24,9 @@ Note: there is **no "ad set" object on LinkedIn** — the object that holds targ
 
 ---
 
-## Method 1: Browser automation (default; no API required)
+## Method 1: Through the browser (the default — no API setup needed)
 
-Claude drives LinkedIn Campaign Manager directly in Chrome — same pattern as the other browser-primary platforms.
+Claude drives LinkedIn Campaign Manager directly in Chrome — the same pattern used across every browser-driven platform in this skill.
 
 ### Prerequisites
 
@@ -223,7 +223,7 @@ Drafts and paused campaigns can be deleted freely. **Active** campaigns must be 
 
 ## Method 2: LinkedIn Marketing API (documented, not yet exercised)
 
-Programmatic path — useful for bulk setup or CI/CD. Requires developer-app approval through LinkedIn's Marketing Developer Platform.
+For bulk work or repeatable setups, you can also drive LinkedIn through their Marketing API instead of the browser. Requires a one-time approval from LinkedIn's Marketing Developer Platform program, which can take weeks — there's no self-serve tier for the write access needed to create campaigns.
 
 - **Docs:** [learn.microsoft.com/linkedin/marketing/](https://learn.microsoft.com/linkedin/marketing/)
 - **Base URL:** `https://api.linkedin.com/rest/`

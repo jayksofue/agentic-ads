@@ -1,23 +1,26 @@
 ---
 name: agentic-ads-reddit
-description: Deploy Reddit ad campaigns via browser automation (ads.reddit.com) or Reddit Ads API v3 (allow-list required). Strong for subreddit/community targeting. API field names re-verified 2026-07-12 against multiple integrator schemas (Fivetran, dltHub, community MCPs). Use when working with Reddit ads specifically; loaded by the parent agentic-ads skill.
+description: Launch Reddit ad campaigns through ads.reddit.com in the browser, or through Reddit's Ads API for bulk work. Reddit's advantage is subreddit-level targeting — point ads at specific communities (r/fintech, r/webdev, etc.) rather than guessing at interest categories. Every campaign is created as Paused; nothing goes live without an explicit "launch" from the user. Use this when launching Reddit ads specifically; loaded automatically by the parent agentic-ads skill.
 ---
 
 # Reddit Ads — Skill
 
-Claude runs Reddit campaigns two ways — via browser automation of ads.reddit.com (works today, no API approval needed) or via the Reddit Ads API v3 (requires OAuth + allow-list approval). Both create in a paused state and require an explicit confirm before serving.
+Two ways to launch Reddit campaigns:
 
-Reddit is a strong fit for community-intent targeting: you point ads at specific subreddits (r/CryptoCurrency, r/fintech, r/ethfinance, r/webdev) rather than guessing at interests. Subreddit targeting is the platform's core advantage over Meta/TikTok/X.
+- **Through the browser** — Claude drives ads.reddit.com directly in Chrome. Works for anyone with a Reddit Ads account.
+- **Through Reddit's Ads API** — faster for bulk work. Requires OAuth setup **and** allow-list approval from Reddit's ads team (for write access — read-only is available sooner).
 
-> **QA status (2026-07-12): 📝 Documented; browser path buildable today, API path buildable once your app is allow-listed.**
+Both paths create the campaign in a Paused state; nothing serves until you say launch.
+
+**Why Reddit for paid ads:** subreddit targeting. You point ads at specific communities (r/CryptoCurrency, r/fintech, r/webdev, etc.) rather than guessing at interest categories. It's Reddit's main advantage over Meta / TikTok / X.
+
+> **Status: 📝 Documented — browser path buildable today, API path buildable once your app is allow-listed.** The API-side details below have not been end-to-end tested from this environment (no Reddit Ads credentials configured here), but the technical field names were cross-verified during research against three independent sources: Fivetran's public schema for Reddit Ads data, the community-maintained Reddit Ads MCP server, and Reddit's own public help pages. Reddit's official API reference itself is behind an allow-list, which is why cross-referencing against third-party integrations was necessary.
 >
-> This has not been run through a live create→delete cycle from this environment (no Reddit Ads credentials). API field names below were **cross-verified against three independent sources** during the 2026-07 research pass: the Fivetran `dbt_reddit_ads_source` schema (primary), the community-maintained Reddit Ads MCP server, and Reddit's own public Ads Help Center pages. The v3 API reference itself is behind an allow-list.
->
-> The audit's earlier safety-critical concern about `is_enabled` vs `configured_status` is **resolved**: the correct field is **`configured_status`** with values `ACTIVE` / `PAUSED` / `ARCHIVED` / `DELETED`. `is_enabled` is not a valid Reddit field and would be silently ignored — an object POSTed with only `is_enabled: false` (no `configured_status`) defaults to `ACTIVE` and serves on save. Do not use `is_enabled` anywhere in Reddit API calls.
+> **Safety-critical field name resolved (this was the biggest question).** Earlier drafts of this file used `is_enabled` for the paused-state field. That's wrong — Reddit ignores it. The correct field is **`configured_status`** with values `ACTIVE` / `PAUSED` / `ARCHIVED` / `DELETED`. If you post a campaign with `is_enabled: false` and no `configured_status`, it defaults to Active and serves on save. Never use `is_enabled` in Reddit API calls.
 
 ---
 
-## Method 1: Browser automation (no API required)
+## Method 1: Through the browser (no API setup needed)
 
 Claude drives [ads.reddit.com](https://ads.reddit.com) directly in Chrome.
 
@@ -96,9 +99,9 @@ Claude reads back the campaign name from the row before clicking Delete (ID-matc
 
 ---
 
-## Method 2: Reddit Ads API v3
+## Method 2: The Reddit Ads API (v3)
 
-Programmatic path. Requires OAuth **and** allow-list approval for write scopes.
+For bulk work or repeatable setups, you can drive Reddit through their Ads API instead of the browser. Requires OAuth setup **and** allow-list approval from Reddit's ads team for write access — read-only access is available sooner. The API reference itself is only visible to allow-listed apps, which is why the field names below were cross-verified against third-party integrations rather than pulled straight from Reddit's docs.
 
 - **Base URL:** `https://ads-api.reddit.com/api/v3/`
 - **Docs:** `https://ads-api.reddit.com/docs/v3/` (allow-list-gated; not publicly readable)

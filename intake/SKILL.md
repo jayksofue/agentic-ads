@@ -1,186 +1,190 @@
 ---
 name: agentic-ads-intake
-description: Guided walkthrough for launching an ad campaign — asks 10 core questions, applies platform best practices, blocks anything that would fail policy or waste money before you deploy. Loads the right platform sub-skill (LinkedIn/Meta/X/Google/Reddit/TikTok) based on the answers. This is the entry point for the agentic-ads skill.
+description: Guided walkthrough for launching an ad campaign — asks 10 plain-English questions, applies each platform's best practices, and blocks anything that would fail platform policy or waste your money before you launch. Routes to the right platform guide (LinkedIn / Meta / X / Google / Reddit / TikTok) based on your answers. This is the entry point for agentic-ads.
 ---
 
 # Intake — Guided Ad-Campaign Walkthrough
 
-Ask 10 questions. Apply the constraints in [routing-tables.md](./routing-tables.md). Load the platform sub-skill(s) that fit. Block the deploy if any hard constraint fails.
+Ask 10 questions. Apply the platform-specific settings in [routing-tables.md](./routing-tables.md). Load whichever platform's guide fits the answers. Block the launch if any of the pre-launch checks fail.
 
-**Design principle: prescriptive on safety, advisory on strategy.** The intake enforces what would fail or waste money (no debate); it surfaces trade-offs where the user actually has a choice. It never tells the operator which platform is "best" without knowing their inputs — but it will disqualify platforms whose policy/budget/pixel/creative constraints their inputs would break.
+**How the skill decides what to do vs. what to ask:** the skill enforces the things that would fail policy or waste your money — no debate. It surfaces options where you actually have a choice. It never picks the platform for you without knowing your inputs, but it will rule out platforms your budget/audience/creative/regulated-category doesn't fit.
 
 ---
 
 ## The 10-question walkthrough
 
-Ask these in order. Each question has a **why-it-matters** line, an **example**, and a **default the user can accept with one word**. If the user says "use default" or "same as last" or "your call," accept and move on. If the user pastes a full brief up front (>200 chars covering multiple questions), skip to the confirmation summary and fill missing gaps only.
+Ask these in order. Each question has a **why-it-matters** line, an **example**, and a **default** you can accept with one word ("use default," "same as last," "your call"). If you paste a full brief up front (a longer message covering several of the questions), the skill skips ahead to the confirmation summary and only asks about anything still missing.
 
 ### 1. What are you promoting? (brand + product in one line)
 
-> **Why:** anchors copy generation + detects regulated categories (finance / crypto / health / employment / housing / gambling / politics / alcohol)
-> **Example:** "our SaaS invoicing tool for freelancers" · "Nike Pegasus 41 running shoes" · "our webinar on incident response for SREs" · "our B2B stablecoin payments infrastructure"
+> **Why it matters:** anchors the ad copy the skill writes, and tells Claude whether your ad falls into a regulated category (finance, crypto, health, employment, housing, gambling, politics, alcohol).
+> **Examples:** "our SaaS invoicing tool for freelancers" · "Nike Pegasus 41 running shoes" · "our webinar on incident response for SREs" · "our B2B stablecoin payments infrastructure"
 
-Detect regulated category from this answer. Set `regulated_category` internally to one of: `financial_services` | `crypto` | `health` | `employment` | `housing` | `credit` | `gambling` | `politics` | `alcohol` | `none`. Confirm with the user if the detection matters ("this looks like a financial-services ad — is that right? affects which platforms can run it and what declarations they need").
+From this answer, Claude figures out whether the ad is in a regulated category (`financial_services`, `crypto`, `health`, `employment`, `housing`, `credit`, `gambling`, `politics`, `alcohol`, or `none`). If it matters — because that category needs extra approvals on certain platforms — Claude confirms with you before moving on. For example: *"This looks like a financial-services ad — is that right? It'll change which platforms can run it and what approvals you need."*
 
 ### 2. What's the goal?
 
-> **Why:** determines the objective enum on every platform
-> **Options (present as list; user picks one):** `awareness` · `traffic` · `engagement` · `video_views` · `leads` · `conversions` · `app_installs` · `sales` · `followers` (X-only)
-> **Default:** `traffic` for a cold audience with a landing page; `awareness` if no landing page
+> **Why it matters:** the same goal has a different name on every platform, so Claude picks the right name for whichever platform(s) you end up on.
+> **Options:** `awareness` · `traffic` · `engagement` · `video_views` · `leads` · `conversions` · `app_installs` · `sales` · `followers` (X only)
+> **Default:** `traffic` if you've got a landing page; `awareness` if you don't.
 
-If user picks `conversions` / `sales` / `leads`, ask Q2a: **"Do you have a pixel/conversion event firing with 30+ recent events?"** If no → warn and offer to fall back to `traffic` (see the routing table: Meta/Google/TikTok/Reddit all need pixel volume to optimize for conversions; without it they underdeliver).
+If you pick `conversions`, `sales`, or `leads`, Claude follows up: **"Do you have a pixel installed on the landing page, and has it recorded 30+ conversions in the last month?"** If not, Claude warns you and offers to fall back to `traffic` — Meta, Google, TikTok, and Reddit all need real conversion volume before their algorithms can optimize for conversions. Without it, a "conversion" campaign underdelivers because the platform has nothing to learn from.
 
 ### 3. Ideal customer in one paragraph
 
-> **Why:** feeds targeting + copy generation
-> **Example:** "US CTOs and heads of engineering at fintech startups, Series A–C, actively integrating payments infrastructure" · "US women 25–34 who follow running influencers and shop Nike/Lululemon"
-> **Default:** ask — this is the highest-leverage input
+> **Why it matters:** feeds the targeting on every platform and the copy the skill writes.
+> **Examples:** "US CTOs and heads of engineering at fintech startups, Series A–C, actively integrating payments infrastructure" · "US women 25–34 who follow running influencers and shop Nike/Lululemon"
+> **Default:** ask — this is the highest-leverage input. The more specific, the better the targeting.
 
-Extract from the paragraph: demographics (age, gender, geo, language), professional attributes (role, industry, seniority, company size — only for B2B), interests/behaviors, purchase intent. Feed each dimension into the per-platform targeting router in [routing-tables.md](./routing-tables.md).
+From the paragraph Claude pulls: demographics (age, gender, geography, language), professional attributes (role, industry, seniority, company size — only for B2B), interests/behaviors, and purchase intent. Each dimension gets mapped to the right targeting option on whichever platform runs the campaign (details in [routing-tables.md](./routing-tables.md)).
 
 ### 4. Where do they live? (countries + optional cities)
 
-> **Why:** geo targeting + regulated-category geo eligibility check
-> **Example:** "US, UK, Singapore" · "US only" · "US + Canada + EU"
-> **Default:** infer from Q3 (if audience paragraph mentioned geos, use those)
+> **Why it matters:** sets the geographic targeting, and for regulated categories, decides which platforms even allow the ad in that geo.
+> **Examples:** "US, UK, Singapore" · "US only" · "US + Canada + EU"
+> **Default:** infer from Q3 (if the audience paragraph mentioned countries, use those).
 
-For regulated categories, cross-check against the platform's geo allowlist for that category (in routing-tables.md). If the target geo isn't on the platform's allowlist for the category, disqualify the platform for that combination.
+For regulated categories, Claude checks whether the platform allows ads for that category in the geos you named. For example: crypto ads on TikTok are prohibited in the US but allowed in some Latin American markets with local licensing. If the target geo isn't on the platform's allowed list for the category, that platform gets ruled out for this combination.
 
 ### 5. Total budget + shape
 
-> **Why:** sets budget mode + minimum feasibility
+> **Why it matters:** picks the budget structure and checks whether you're above each platform's practical minimum.
 > **Options:** `$X lifetime over N days` · `$X/day always-on` · `$X total for a fixed campaign`
-> **Example:** "$500 lifetime over 30 days" · "$50/day for a month" · "$1500 monthly recurring"
-> **Default:** ask — no reasonable default here
+> **Examples:** "$500 lifetime over 30 days" · "$50/day for a month" · "$1,500 monthly recurring"
+> **Default:** ask — no reasonable default here.
 
-Immediately run **Feasibility check A: platform minimum**. Convert lifetime to $/day (lifetime ÷ days), then compare against each platform's practical minimum (from routing-tables.md). Disqualify any platform where $/day falls below its practical minimum, with the explicit reason.
+Claude immediately runs the **budget sanity check** (see the checks section below). Lifetime budget gets converted to a daily figure (lifetime ÷ days), then compared to each platform's practical minimum. If your daily spend falls below the platform's minimum, Claude rules that platform out and explains why.
 
 ### 6. Timing
 
-> **Why:** start/end dates + ad-review SLA guardrails
+> **Why it matters:** sets start/end dates, and warns you if platform review times won't leave you enough runway.
 > **Options:** `ASAP` · `starts [date]` · `runs [start] to [end]` · `always-on until paused`
-> **Default:** `ASAP` (start tomorrow to allow ad review)
+> **Default:** `ASAP` (start tomorrow so the ad has time for review).
 
-Cross-check against ad-review SLAs in the root SKILL.md. If the user says "campaign has to run by [date]" and the ad-review SLA (especially for regulated categories) doesn't leave time, warn: "regulated crypto/finance ads take 3–5 business days for review on Google, days–weeks on Meta/LinkedIn/Reddit/TikTok — your [date] deadline is tight; consider Traffic objective on a non-regulated platform, or start now."
+Claude cross-checks against each platform's typical ad-review time (in the root [SKILL.md](../SKILL.md)). If you have a hard deadline that doesn't leave enough time — especially for regulated categories, where review can take 3–5 business days on Google or weeks on Meta/LinkedIn/Reddit/TikTok — Claude flags it and suggests: (a) start now, (b) switch to a `traffic` goal on a non-regulated platform where the review is faster, or (c) accept the delay.
 
 ### 7. What creative do you have?
 
-> **Why:** determines ad format + platform fit
-> **Options:** `video 9:16` (TikTok-native, works on Reels/Shorts) · `video 16:9` (YouTube, LinkedIn) · `video 1:1` (Meta Feed, X) · `single image` · `carousel` · `document/PDF` (LinkedIn-only) · `existing post to promote` · `nothing yet — help me plan`
-> **Default:** ask — creative gates platform choice
+> **Why it matters:** determines the ad format, which determines which platforms fit.
+> **Options:** `video 9:16` (vertical — TikTok-native, works on Reels/Shorts) · `video 16:9` (horizontal — YouTube, LinkedIn) · `video 1:1` (square — Meta Feed, X) · `single image` · `carousel` · `document/PDF` (LinkedIn only) · `existing post to promote` · `nothing yet — help me plan`
+> **Default:** ask — the creative decides which platforms are even in the running.
 
-If the user has no creative and no time to make one, offer: (a) copy-only formats (X promoted post, Reddit text post, Google Search text ads); (b) Claude generates copy + you find one image (Meta single-image, LinkedIn single-image); (c) delay campaign until creative is ready. Route to [copy/SKILL.md](../copy/SKILL.md) for copy generation.
+If you have no creative and no time to make one, Claude offers three paths: (a) copy-only formats (X promoted post, Reddit text post, Google Search text ads); (b) Claude writes the copy and you supply one image (works for Meta and LinkedIn single-image ads); (c) delay the campaign until creative is ready. Copy work routes through [copy/SKILL.md](../copy/SKILL.md).
 
-Run **Feasibility check B: creative-format match**. If user picks a platform where their creative doesn't fit (e.g. Document ad → LinkedIn only; 9:16 video → TikTok/Reels-native, works on Meta but underperforms on LinkedIn feed), warn or disqualify.
+Claude also runs a **creative-format sanity check**: if you're trying to run a Document ad on any platform other than LinkedIn (unavailable), or a 9:16 vertical video on LinkedIn (works but underperforms because LinkedIn feed is horizontal), the skill warns or blocks — depending on how bad the mismatch is.
 
-### 8. Where should clicks go? (destination)
+### 8. Where should clicks go? (landing destination)
 
-> **Why:** landing URL + conversion tracking setup
+> **Why it matters:** sets the destination URL and decides whether conversion tracking is possible.
 > **Options:** `landing page URL` · `app store link` · `existing lead form` · `phone number` · `nothing — awareness only`
-> **Example:** "eco.com/build" · "apps.apple.com/…"
-> **Default:** ask if goal is `traffic`/`conversions`/`leads`/`app_installs`; skip if goal is `awareness`/`video_views`
+> **Examples:** "yourbrand.com/pricing" · "apps.apple.com/…"
+> **Default:** ask if the goal is `traffic` / `conversions` / `leads` / `app_installs`; skip if the goal is `awareness` / `video_views`.
 
-If `conversions` goal but no pixel installed on destination → fail loud: "we can't optimize for conversions on a page with no pixel. Options: (a) install the platform's pixel first, (b) switch goal to Traffic, (c) skip." Do not silently fall back.
+If the goal is `conversions` but there's no pixel on the destination, Claude stops and says so plainly: *"We can't optimize for conversions on a page with no pixel. Your options: (a) install the platform's pixel first, (b) switch this campaign to Traffic and re-run as Conversions once you have data, (c) skip."* No silent fallback — it's your money, so you decide.
 
 ### 9. Tone / brand voice
 
-> **Why:** copy generation constraints; anti-slop
+> **Why it matters:** shapes the ad copy Claude writes.
 > **Options:** `confident + technical` · `friendly + accessible` · `authoritative + formal` · `playful + irreverent` · `provide examples of past copy` · `same as our website`
-> **Default:** `confident + technical` for B2B; `friendly + accessible` for consumer; infer from Q1
+> **Default:** `confident + technical` for B2B; `friendly + accessible` for consumer; if unsure, Claude infers from Q1.
 
-Pass tone + Q10 don'ts into [copy/SKILL.md](../copy/SKILL.md) for copy generation.
+Tone plus the "avoid" list from Q10 gets passed to [copy/SKILL.md](../copy/SKILL.md), which handles the actual writing.
 
 ### 10. Anything to avoid in the ad?
 
-> **Why:** brand-safety guardrails + slop rules
-> **Example:** "no em-dashes, no 'seamless/innovative/cutting-edge', no 'game-changer'" · "don't mention specific competitors" · "don't imply guaranteed returns"
-> **Default:** apply the standard anti-slop checklist from [copy/SKILL.md](../copy/SKILL.md)
+> **Why it matters:** brand-safety guardrails and slop rules.
+> **Examples:** "no em-dashes, no 'seamless / innovative / cutting-edge,' no 'game-changer'" · "don't mention specific competitors" · "don't imply guaranteed returns"
+> **Default:** apply the standard anti-slop checklist from [copy/SKILL.md](../copy/SKILL.md).
 
-Note: for regulated categories (crypto, finance, health), some phrases are policy-required to avoid — the intake enforces those regardless of user preference (e.g. no "guaranteed returns" on crypto ads across every platform).
+For regulated categories (crypto, finance, health), some phrases are prohibited by platform policy regardless of what you say. Claude enforces those either way — e.g. no "guaranteed returns" on crypto ads, on any platform.
 
 ---
 
-## Platform-specific follow-up questions (only ask if relevant)
+## Platform-specific follow-up questions (only asked when relevant)
 
-After the 10 core questions, ask 1–2 platform-specific questions only if the user selected a platform that needs them:
+After the 10 core questions, Claude asks 1–2 platform-specific extras — but only if the platform you picked actually needs them:
 
-| If user picked | Also ask |
+| If you picked | Also asks |
 |---|---|
-| **LinkedIn** | Job function + seniority + company size band (LinkedIn's B2B targeting is unique) |
-| **Meta** | Custom-audience/lookalike sources — only if pixel data exists (from Q8) |
-| **X** | Follower-lookalike @handles + keyword targeting (X's unique interest model) |
-| **Google Search** | Seed keywords (2–5) and match type preference (phrase/exact) |
-| **Google Video / Demand Gen** | YouTube video URL (asset must exist on the channel) |
-| **Google PMax** | Asset group source (existing landing page URL is enough — Google infers) |
-| **Reddit** | Which subreddits (Reddit's core lever — always ask, don't auto-pick) |
-| **TikTok** | Spark Ad or fresh upload? If Spark, TikTok post URL + Creator Marketplace auth code |
+| **LinkedIn** | Job function + seniority + company size band (LinkedIn's B2B targeting is unique — no other platform has this dimension) |
+| **Meta** | Custom-audience or lookalike-audience sources — only if there's pixel data available to build from |
+| **X** | Follower-lookalike @handles + keyword targeting (X's interest model works differently from the others) |
+| **Google Search** | Seed keywords (2–5) and match-type preference (phrase vs. exact) |
+| **Google Video / Demand Gen** | YouTube video URL (the asset has to exist on your channel) |
+| **Google Performance Max** | Source landing page URL (Google infers the rest from it) |
+| **Reddit** | Which subreddits to target (this is Reddit's main lever — Claude always asks, never auto-picks) |
+| **TikTok** | Spark Ad (promoting an existing TikTok post) or fresh upload? If Spark, the post URL + Creator Marketplace authorization code |
 
-If the user chose multiple platforms in Q1a (see multi-platform mode below), ask each platform's follow-up separately.
+If you're running on multiple platforms in one session (see below), Claude asks each platform's follow-ups separately.
 
 ---
 
 ## Multi-platform mode
 
-**Supported:** launching the same brief across multiple platforms as **independent, parallel campaigns**. Each campaign is its own object on its own platform — same creative + same audience intent, but separate campaign IDs, separate budgets, separate reporting.
+**Supported:** launching the same brief across several platforms as **separate, parallel campaigns**. Same audience intent + same creative, but each platform gets its own campaign, its own budget, and its own reporting.
 
-**Not supported (v1):** cross-platform campaigns that share a budget or report as one entity. Every platform's ad account is independent; there is no unified "spend $500 across LinkedIn + Meta with automatic allocation" mode in this skill.
+**Not supported (yet):** true cross-platform campaigns that share one budget and roll up into one report. Every ad platform's account is independent, and this skill doesn't try to allocate spend across them automatically. That's a later-version feature.
 
-If the user says "run this on LinkedIn and Meta," treat as two separate campaign creates. If they say "run on all platforms that fit," suggest the ones that pass feasibility and let them pick.
+If you say "run this on LinkedIn and Meta," Claude treats it as two separate campaign builds. If you say "run on all platforms that fit," Claude tells you which ones pass the pre-launch checks and lets you pick.
 
 ---
 
-## Feasibility check layer
+## Pre-launch sanity checks
 
-Run **before any create call**. Fail loud with actionable fix — don't just warn.
+Run **before creating any campaign.** If any check fails, Claude blocks the launch and tells you the exact fix — never a silent warning that leaves you to figure it out.
 
-### A. Budget × duration hits platform minimum
+### A. Budget × duration meets the platform minimum
 
-Convert to $/day (lifetime ÷ days). Compare each candidate platform's practical minimum:
+Convert lifetime to daily (lifetime ÷ days). Compare against each platform's practical minimum:
 
 | Platform | Practical daily minimum |
 |---|---|
-| Meta | ~$20/day (needs ~50 events/week to exit learning phase) |
-| LinkedIn | $25/day Sponsored Content (or $10/day for Text Ads specifically) |
-| X | ~$5–10/day for engagement/reach; **~$50/day for conversion objectives** |
-| Google Search | 10× expected CPC (~$10–50/day depending on keyword competitiveness) |
-| Reddit | $50–100/day for the algo to learn (technical min is $5/day but starves at that level) |
-| TikTok | $50/day campaign / $20/day ad group (hard-enforced by the API) |
+| Meta | ~$20/day (needs about 50 conversion events per week to exit the learning phase) |
+| LinkedIn | $25/day for Sponsored Content (Text Ads work from $10/day) |
+| X | ~$5–10/day for engagement/reach objectives; **~$50/day for conversion objectives** |
+| Google Search | About 10× the expected cost-per-click (~$10–50/day depending on keyword competition) |
+| Reddit | $50–100/day for the algorithm to actually learn (technical minimum is $5/day but the campaign starves at that level) |
+| TikTok | $50/day at the campaign level, $20/day at the ad-group level — the platform hard-blocks smaller budgets |
 
-If below → **block with the exact fix**: "$100 lifetime × 30 days = $3.30/day. TikTok requires ~$50/day; Meta needs ~$20/day. Raise to $600 lifetime over 30 days, or switch to Traffic + a lower-minimum platform like X or Reddit."
+If your budget falls below → **block with the exact fix**:
+> "$100 lifetime × 30 days = $3.30/day. TikTok requires ~$50/day and Meta needs ~$20/day. Two options: raise the budget to ~$600 lifetime over 30 days, or switch to a Traffic goal on X or Reddit (both have lower minimums)."
 
-### B. Conversion goal has pixel with volume
+### B. Conversion goal has a pixel + real volume
 
-If goal ∈ {`conversions`, `sales`, `leads` on Meta}, check:
-1. Pixel installed on destination? (user reports)
-2. 30+ events fired in the last 30 days on the target event?
+If the goal is `conversions`, `sales`, or `leads` on Meta:
 
-If either is no → **block**: "Conversion optimization needs 30+ recent events to work. Options: (a) install the pixel + drive 30+ events via Traffic first, (b) switch this campaign to Traffic and re-run as Conversions once you have volume, (c) skip."
+1. Is a pixel installed on the destination? (you tell Claude)
+2. Has that pixel recorded 30+ conversion events in the last 30 days?
 
-### C. Regulated category has required declaration/approval
+If either answer is no → **block**:
+> "Optimizing for conversions needs 30+ recent conversion events on file so the platform's algorithm has something to learn from. Your options: (a) install the pixel and drive 30+ events via a Traffic campaign first, then re-launch as Conversions, (b) run this campaign as Traffic right now and switch to Conversions later, (c) skip."
+
+### C. Regulated category has the right approval
 
 For each platform × regulated-category combination in [routing-tables.md](./routing-tables.md):
 
 | Category | Meta | LinkedIn | X | Google | Reddit | TikTok |
 |---|---|---|---|---|---|---|
-| Cryptocurrency (any) | Auth & Verifications approval (days–weeks) | Sales-rep whitelist (days–weeks) | Category cert (days) | Crypto cert (3–5 biz days) | Sales rep (multi-week) | **US: prohibited.** LatAm only, Sales Rep |
-| Financial services | `special_ad_categories: [FINANCIAL_PRODUCTS_SERVICES]` (India-specific) OR Auth & Verifications | Sales-rep whitelist | Financial services cert | Financial products cert | Sales rep | Sales Rep + Verified Business Account |
-| Employment / Housing / Credit (US anti-discrimination) | `special_ad_categories: [EMPLOYMENT / HOUSING / CREDIT]` | Automatically flagged via account | Similar restrictions apply | Standard | Automatic | `special_industries` field |
+| Cryptocurrency (any) | Authorizations & Verifications approval in Business Suite (days–weeks) | Sales-rep whitelist (days–weeks) | Category certification (days) | Cryptocurrencies certification (3–5 business days) | Sales rep required (multi-week) | **US: prohibited.** Latin American geos only, and only with a Sales Rep |
+| Financial services | India-specific category setting, or Authorizations & Verifications | Sales-rep whitelist | Financial services certification | Financial products certification | Sales rep required | Sales Rep + Verified Business Account |
+| Employment / Housing / Credit (US anti-discrimination) | Set the "special ad categories" flag for the right category | Automatically flagged based on account | Similar restrictions | Standard flow | Automatic | TikTok's `special_industries` setting |
 
-If the operator hasn't completed the required approval for the platforms they picked → **block with the fix**: "Meta requires Business Suite → Authorizations & Verifications for crypto. Path: (a) start the approval now (days–weeks), (b) route to X (Cryptocurrency cert is fastest, few days), (c) route to Google (Crypto cert 3–5 biz days), (d) run browser path on Reddit (needs a sales rep before publishing but you can build the draft)."
+If you haven't done the required approval on the platform you picked → **block with the fix**:
+> "Meta requires Authorizations & Verifications approval for crypto ads. Your options: (a) start the approval now (days–weeks to complete), (b) route to X instead — the Cryptocurrency certification is fastest, usually a few days, (c) route to Google — Crypto certification takes 3–5 business days, (d) build a Reddit draft in the browser now, but you'll need a Reddit sales rep before you can publish it."
 
-### D. Creative spec matches format
+### D. Creative fits the ad format
 
-Compare the user's creative dimensions to each candidate platform's format requirements (aspect ratio, resolution, duration, file size). If creative doesn't fit → warn if it's a soft mismatch (16:9 on Meta Feed underperforms 1:1), block if it's a hard mismatch (100 MB image → over Meta's 30 MB limit).
+Compare your creative's dimensions to each candidate platform's format requirements: aspect ratio, resolution, duration, file size. If the creative doesn't fit → warn if it's a soft mismatch (a horizontal video works on Meta Feed but underperforms a square one), block if it's a hard mismatch (a 100 MB image is over Meta's 30 MB size cap).
 
-### E. Ad account access level
+### E. You have the right account access
 
-Ask before build: "Are you an Admin/Advertiser on the [platform] ad account, not just a Viewer?" Viewers cannot create campaigns. If unsure, route them to check under Account Settings on the platform.
+Before building, Claude asks: *"Are you an Admin or Advertiser on the [platform] ad account — not just a Viewer?"* Viewer-level accounts can't create campaigns. If you're not sure, Claude points you to the account settings page on that platform.
 
 ---
 
 ## The confirmation summary
 
-Before any create call, echo everything back to the operator. Every default the skill applied is listed explicitly — no hidden decisions.
+Before creating anything, Claude echoes back the full setup. Every default the skill applied gets listed explicitly — nothing hidden.
 
 Template:
 
@@ -188,65 +192,65 @@ Template:
 Ready to build. Confirming your setup:
 
 Platform:            [LinkedIn]
-Objective:           [WEBSITE_VISIT / traffic]  ← from your goal "traffic"
+Objective:           [Website Visit / traffic]  ← from your goal "traffic"
 Audience:            [US CTOs, engineering leads at fintech Series A–C]
-                     LinkedIn targeting: Function=Engineering|IT + Seniority=Director+VP+CXO
-                     + Industry=Financial Services|Software + Company size=51–1000
-Estimated reach:     [~180K members]  ← within LinkedIn's 50–400K sweet spot ✓
+                     LinkedIn targeting: Function = Engineering + IT · Seniority = Director + VP + CXO
+                     Industry = Financial Services + Software · Company size = 51–1,000
+Estimated reach:     [~180K members]  ← within LinkedIn's 50K–400K sweet spot ✓
 Geo:                 [US, UK, Singapore]
 Budget:              [$500 lifetime over 30 days = ~$16.70/day]
                      ⚠ Below LinkedIn's $25/day practical minimum for Sponsored Content.
-                     Recommendation: raise to $750 or switch to Text Ads ($10/day min).
+                     Recommendation: raise to $750, or switch to Text Ads ($10/day min).
 Timing:              [Starts 2026-07-15, ends 2026-08-14]
 Creative:            [PDF report — Document ad format]
-Destination:         [eco.com/build]  (pixel: Insight Tag ✓ conversion event configured)
+Destination:         [yourbrand.com/build]  (LinkedIn Insight Tag installed, conversion event configured ✓)
 Tone:                [confident + technical]
-Avoiding:            [em-dashes; "seamless/innovative/cutting-edge"; competitor names]
+Avoiding:            [em-dashes; "seamless / innovative / cutting-edge"; competitor names]
 
-Defaults applied:
-- audienceExpansionEnabled: false  (turn off LinkedIn's auto-widening)
-- offsiteDeliveryEnabled: false    (LinkedIn Audience Network off — feed only)
-- status: DRAFT                    (won't serve until you say "launch")
-- optimizationTargetType: MAX_CLICK  (LinkedIn best-practice for cold traffic)
-- creativeSelection: OPTIMIZED     (LinkedIn's default; picks best-performing variant)
+Defaults the skill applied:
+- Audience Expansion: OFF (turn off LinkedIn's auto-widening)
+- LinkedIn Audience Network: OFF (LinkedIn feed only)
+- Status: DRAFT (won't serve until you say "launch")
+- Bidding: Maximum Delivery — optimize for clicks (best practice for cold traffic on LinkedIn)
+- Creative rotation: OPTIMIZED (LinkedIn picks the best-performing variant automatically)
 
-Feasibility flags: 1 warning (see budget line above)
+Sanity checks: 1 warning (see budget line above), everything else passed.
 
-Reply with "launch" to activate, "adjust budget" / "adjust audience" / "adjust creative" to change something, or "cancel" to stop.
+Reply with "launch" to activate. To change something, say "adjust budget" / "adjust audience" / "adjust creative." To stop, say "cancel."
 ```
 
-**Never activate on user silence or a "yes" that could be misread — require an explicit `launch` word.** After launch, echo the campaign ID + link back to the operator.
+**Never activate on silence or a "yes" that could be misread — Claude requires the literal word `launch`.** After launch, Claude echoes back the campaign ID and a link to it in Ads Manager.
 
 ---
 
-## Recommendation rules the skill applies
+## What Claude recommends by default (and why)
 
-These are the "if X, recommend Y because Z" patterns pulled from each platform's best practices — the skill surfaces them proactively so the user knows why a default was chosen. Full per-platform rule set is in [routing-tables.md](./routing-tables.md). Highlights:
+These are the "if X, recommend Y because Z" patterns Claude applies proactively — surfacing them so you know why a default was picked. The full per-platform list lives in [routing-tables.md](./routing-tables.md); the highlights:
 
-**Universal (all platforms):**
-- Cold audience → auto-expansion flags OFF (Advantage+ Audience, LAN, Optimize Targeting, Smart Targeting, Search Partners)
-- First-time on a platform → create as DRAFT/PAUSED, GET-verify state, then activate
-- Regulated category detected → require the correct declaration BEFORE any create call, not after
+**Every platform:**
+- **Cold audience** → the platform's audience-expansion setting gets turned OFF (Meta Advantage+ Audience, LinkedIn LAN + Audience Expansion, X Optimized Targeting, Google Search Partners + AI Max, Reddit Expand Targeting, TikTok Smart Targeting). Turn them on later if you want to test them; you shouldn't get them by accident.
+- **First-time on a platform** → create as Draft or Paused, verify it saved that way, only then activate.
+- **Regulated category detected** → require the right approval BEFORE creating the campaign — not "we'll deal with it in review."
 
-**Per platform (compact — full detail in routing-tables.md):**
-- **LinkedIn:** Sponsored Content minimum ~$25/day (CPCs $5–12); audience 50K–400K sweet spot; if `MAX_CONVERSION` and no Insight Tag conversion → refuse. Cold TOF for B2B → Document format outperforms single-image.
-- **Meta:** Advantage+ Audience `=0` for first 2 weeks on cold audiences; interest count 1–3, not 10; if `daily_budget < 5× expected CPA` → warn (won't exit learning). If special_ad_categories set → detailed interest targeting is auto-disabled.
-- **X:** Cold TOF → default to `REACH` (cheap CPM) not `WEBSITE_CLICKS`; conversion objectives need $50/day+ + a firing pixel. Custom audiences need ≥500 matched users (thin below 10K).
-- **Google Search:** New account cold start → `TARGET_SPEND` (Maximize Clicks) or `MANUAL_CPC`, NOT `TARGET_CPA` (needs 15+ conversions/30d). Wrap keywords in `"quotes"` for phrase match unless specified. `target_google_search: true`, `target_search_network: false`, `target_content_network: false` for pure Search.
-- **Reddit:** Community targeting (subreddits) outperforms interest categories on cold audiences. `expand_targeting: false` for first 2 weeks. Community <50K members → flag delivery risk but don't block (niche can convert well). Budget on ad group via `goal_type` + `goal_value` in micros.
-- **TikTok:** `smart_audience_enabled` + `smart_interest_behavior_enabled` both OFF for cold audiences. Cold budget ≥20× target CPA/day at ad-group level. Creative not 9:16 → warn (feed is vertical-native). Monthly budget <$1,500 (~$50/day floor) → redirect to another platform.
+**Per platform (highlights — full list in [routing-tables.md](./routing-tables.md)):**
+- **LinkedIn:** Sponsored Content minimum $25/day (cost-per-click runs $5–12, so smaller budgets can't generate enough signal). Sweet-spot audience size 50K–400K. If you pick Conversions but haven't set up an Insight Tag conversion event, Claude refuses to activate. For cold B2B traffic, Document ads outperform single-image.
+- **Meta:** For cold audiences, turn Advantage+ Audience off for the first two weeks and use 1–3 interests, not 10. If daily budget is less than 5× your expected cost-per-acquisition, warn — the campaign won't exit learning phase.
+- **X:** For cold prospecting, default to Reach (cheap CPM) not Website Clicks. Conversion objectives need $50/day+ and a firing pixel. Custom Audience uploads need at least 500 matched users — below 10K, delivery gets thin.
+- **Google Search:** New account with no conversion history → use Maximize Clicks or Manual CPC, not Target CPA (which needs 15+ conversions in 30 days to work). Wrap keywords in `"quotes"` for phrase match unless you specify otherwise. Turn OFF Search Partners and Display Network for pure Search campaigns.
+- **Reddit:** Subreddit targeting outperforms interest-category targeting on cold audiences. Leave Expand Targeting off for the first two weeks. A subreddit under 50K members flags for possible delivery risk but doesn't block — niche subs can convert well.
+- **TikTok:** Both Smart Targeting settings (Smart Audience and Smart Interest & Behavior) off for cold audiences. Cold audience budget should be ≥20× your target cost-per-acquisition, at the ad-group level. If your creative isn't 9:16 vertical, warn — TikTok feed is vertical-native. If your monthly budget is under $1,500 (the ~$50/day floor), redirect to another platform.
 
 ---
 
 ## What routes where
 
-The intake collects, then routes to the right sub-skill:
+The intake collects everything, then routes to the right file:
 
-| Intake step | Handled by |
+| Step | Handled by |
 |---|---|
-| 10 questions + platform-specific follow-ups + feasibility gates + confirmation summary | this file (intake/SKILL.md) |
-| Routing tables lookup (enums, budget units, min budgets, targeting patterns, regulated declarations) | [routing-tables.md](./routing-tables.md) |
+| The 10 questions, platform-specific follow-ups, sanity checks, confirmation summary | This file (intake/SKILL.md) |
+| Which objective each platform uses for a given goal, budget formats, minimum budgets, targeting patterns, regulated-category rules, creative sizing | [routing-tables.md](./routing-tables.md) |
 | Copy generation + anti-slop check | [../copy/SKILL.md](../copy/SKILL.md) |
-| Actual campaign create/verify/delete on the platform | [../linkedin/](../linkedin/SKILL.md) · [../meta/](../meta/SKILL.md) · [../x/](../x/SKILL.md) · [../google/](../google/SKILL.md) · [../reddit/](../reddit/SKILL.md) · [../tiktok/](../tiktok/SKILL.md) |
+| Actual campaign create → verify → delete on the platform | [../linkedin/](../linkedin/SKILL.md) · [../meta/](../meta/SKILL.md) · [../x/](../x/SKILL.md) · [../google/](../google/SKILL.md) · [../reddit/](../reddit/SKILL.md) · [../tiktok/](../tiktok/SKILL.md) |
 
-Never skip the intake for a first-time user. Returning users who paste a complete brief can fast-path to the confirmation summary — but the feasibility gates still fire.
+Never skip the intake for a first-time user. Returning users who paste a full brief can fast-path to the confirmation summary — but the sanity checks still fire before launch.

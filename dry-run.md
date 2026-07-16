@@ -1,46 +1,53 @@
 # Dry Run Guide
 
-Every platform in this skill supports a validation step before any campaign goes live or any budget is spent. Always dry run first when launching on a new account or testing a new audience.
+**A "dry run" means seeing exactly what Claude would launch before it costs you anything.** Every platform in this skill supports one — always run a dry run on a new account or a new audience before spending real money.
 
-## How to request a dry run
+## How to ask for a dry run
 
-Add to any campaign prompt:
-- `"Dry run first"` or `"Validate only — don't launch"`
-- Or just ask: `"Show me what you'd submit before doing anything"`
+Add any of these to your campaign prompt:
 
-## Platform dry run behavior
+- `"Dry run first"`
+- `"Show me what you'd submit before doing anything"`
+- `"Validate only — don't launch"`
+
+Claude will build the campaign in a preview state, show you the setup, and wait for your explicit go before anything is created or spent.
+
+## What "dry run" means on each platform
+
+Every platform has a slightly different mechanism for previewing a campaign without spending. Here's what Claude does on each one:
 
 ### LinkedIn
-Claude builds the campaign to **Draft** status in Campaign Manager and stops. Nothing is activated, nothing is billed. You review the draft in the UI and tell Claude to activate when ready.
+Claude builds the campaign in **Draft** status inside Campaign Manager and stops there. Nothing serves, nothing is billed. You review the draft in the LinkedIn UI, and Claude only activates it when you tell it to.
 
 ### Meta
-The `meta-ads` PyPI CLI has **no `--dry-run` flag**. The QA path is: create the campaign PAUSED (via `meta ads campaign create --status PAUSED` — a real object that cannot serve), verify it by re-reading, then `meta ads campaign delete <ID> --force` (delete cascades to child ad sets and ads). The npm `meta-ads` fallback tool *does* have a `--dry-run` flag (live-verified 2026-07-04 as a true no-op) — use it if you want a request-only preview without creating anything.
+Meta's official command-line tool has no "validate only" mode, so the dry-run path is: **build the campaign as PAUSED** (a real object that can't serve or spend), verify it saved that way, and delete it once you're done reviewing. Delete cascades — removing the parent removes the ad sets and ads inside it too. There's an older third-party Meta tool that does have a real "validate only" mode; Claude uses it as a fallback when a request-only preview is genuinely needed.
 
 ### X (Twitter)
-Method 1 (browser, live-verified 2026-07-09): build the wizard through Review-and-launch, click **Save draft** — the campaign persists as `Draft` state (never billable) until you delete it or explicitly click Publish. No pre-launch Paused toggle; the mechanism is Save draft. Method 2 (X Ads API v12): no `validate_only` flag; Claude generates the full API payload (campaign + line item + targeting + creative) as structured JSON without submitting until you confirm.
+For the browser path (the default): Claude builds the campaign all the way through Review-and-launch and clicks **Save draft**. The campaign sits as a Draft until you either delete it or explicitly click Publish — never billable in between. For the API path: X's API has no "validate only" flag, so Claude produces a structured summary of everything that would be submitted (campaign, line item, targeting, creative) and waits for your go before making any real call.
 
 ### Google
-Method 1 (browser, live-verified): build the wizard, click the ✕ close icon, and choose **Discard** in the "Save as a campaign draft?" modal. Nothing persists — this is the true no-spend dry run. **Do not click Save** — saved drafts have no UI delete control (the audit surfaced this: the trash icon is not exposed for drafts-in-progress, so the only route to remove a saved draft is via Google Ads Editor or by publishing-then-removing, which hits the "Confirm it's you" identity-verification gate). Method 2 (Google Ads API, if you have Basic+ access): `validate_only: true` on mutate operations runs policy/keyword/character/targeting validation — it returns errors only (no forecasts). Weekly-impression forecasts require KeywordPlanIdeaService instead.
+For the browser path (the default): Claude builds the campaign all the way through review, then clicks the ✕ close icon and picks **Discard** in the "Save as a campaign draft?" dialog. Nothing persists — this is the true no-spend dry run. **Do not click Save** — Google Ads has no in-UI way to delete a saved draft once it exists (the only options are Google Ads Editor or publishing-then-deleting, which trips Google's identity re-verification prompt). Just don't save it in the first place. For the API path (only if you already have API access set up): Google's API supports a "validate only" mode that runs all the policy and character-limit checks without creating anything — but it only returns errors on failure; there's no traffic forecast in that response. Forecasts come from a separate service.
 
 ### Reddit
-No native validate-only flag. Claude builds the campaign and ad group in the paused state (real objects that don't serve — verify by re-reading before any activation), and/or uses the **Preview an Ad** endpoint to render the creative. Delete after QA, same idea as the Meta cycle. Budgets are in micros ($1 = 1,000,000). ⚠️ The paused-state field name is unverified against Reddit's private v3 spec — see [reddit/SKILL.md](./reddit/SKILL.md) safety banner before your first live call.
+Reddit's API has no "validate only" flag either. The dry-run path is: **build the campaign and ad group in the Paused state** (real objects, real IDs, but they don't serve — Claude double-checks by reading the object back to confirm it saved as Paused), and/or use Reddit's separate "Preview an Ad" endpoint to render the creative on its own. Delete once you're done reviewing.
 
 ### TikTok
-No native validate-only flag. Claude uses the developer **sandbox** advertiser for a true no-spend dry run, or in production creates the campaign disabled (`operation_status: DISABLE`) with no active ad, then deletes after QA. Note the observed allow-list caveat: some apps report `DISABLE` being silently ignored — Claude re-reads and re-disables the object before proceeding. Budgets are in the account currency as whole units (dollars for USD accounts) — not cents, not micros.
+TikTok gives developers a separate **sandbox advertiser account** for testing — that's the cleanest no-spend dry run: full create / read / delete with no real spend, no real review. If you don't have sandbox access, the alternative is to create the campaign in production as **Disabled** with no active ad (nothing serves without an ad), then delete once you're done reviewing. Claude double-checks that the campaign actually saved as Disabled — TikTok has been observed to silently ignore the Disabled flag on some accounts.
 
-## What to check in a dry run
+## What to check during a dry run
 
-- **Audience size**: too small (<10k) means limited delivery; too broad means wasted spend
-- **Creative specs**: image dimensions, copy length limits, aspect ratios
-- **Budget pacing**: lifetime vs daily, start/end dates
-- **Placement exclusions**: confirm Audience Network / Display Network is off if you didn't intend it
-- **Targeting conflicts**: overlapping exclusions that zero out the audience
+- **Audience size** — Under 10K usually means limited delivery on any platform. Over ~10M means you're probably paying to reach people who don't care.
+- **Creative** — Image dimensions match the format? Video aspect ratio right? Copy under the character limit for that platform?
+- **Budget pacing** — Is it set as lifetime or daily? Does the start/end date match what you asked for?
+- **Placements** — LinkedIn Audience Network off (unless you wanted it on)? Google Display Network off for Search-only campaigns? Meta Audience Network excluded?
+- **Targeting conflicts** — Any overlapping exclusions that would zero out the audience?
 
-## Confirming launch after dry run
+## Confirming launch after the dry run
 
-Once you've reviewed:
+Once everything looks right:
+
 ```
 Looks good — go ahead and launch.
 ```
 
-Claude activates (LinkedIn), submits (Meta/Google), or calls the create endpoint (X/Reddit/TikTok).
+Claude activates the campaign on the platform and echoes back the campaign ID + a link to it in Ads Manager.

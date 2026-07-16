@@ -1,17 +1,22 @@
 ---
 name: agentic-ads-x
-description: Deploy X (Twitter) ad campaigns via browser automation (ads.x.com) or the X Ads API v12. Save-draft-then-verify flow was live-QA'd 2026-07-09. Use when working with X/Twitter ads specifically; loaded by the parent agentic-ads skill.
+description: Launch X (Twitter) ad campaigns through ads.x.com in the browser, or through X's Ads API for bulk work. The Save-draft-then-verify flow was live-verified end-to-end. Every campaign is created as a Draft — nothing goes live without an explicit "launch" from the user. Use this when launching X ads specifically; loaded automatically by the parent agentic-ads skill.
 ---
 
 # X Ads — Skill
 
-Claude can run X campaigns two ways — via browser automation (works today, no API approval needed) or via the X Ads API (requires separate approval). Both support paused/draft mode.
+Two ways to launch X campaigns:
 
-> **QA status (2026-07-09): ✅ Method 1 (browser) verified end-to-end.** Ran the full cycle live on account `18ce54of0a1`: create campaign (Reach) → ad group targeting → Save draft → confirmed in the campaign list as `Draft` → deleted. Two behaviors were refined during QA (see the gotchas table): Save draft only persists from **Review and launch**, and the delete control is an **inline trash icon next to the campaign ID** on row hover. Method 2 (X Ads API) is still 📝 documented-only — no Ads API credentials configured, and access is approval-gated (typically weeks).
+- **Through the browser** — Claude drives X Ads Manager directly in Chrome. Works for everyone with an X ads account, no developer approval needed.
+- **Through X's Ads API** — faster for bulk work. Requires a separate application to X's Ads API program (approval typically takes weeks).
+
+Both paths keep the campaign in Draft state until you explicitly say "launch."
+
+> **Status: ✅ Browser path verified end-to-end.** The full cycle — create campaign → set audience targeting → Save draft → verify it saved as a Draft → delete — was run live on a real X ads account. Two behaviors were confirmed by that live test (both in the gotchas table below): Save draft only persists from the **Review and launch** step, and the delete control is an **inline trash icon next to the campaign ID** that only appears when you hover the row. The API path is documented but not yet live-verified from this environment; API access is approval-gated and typically takes weeks.
 
 ---
 
-## Method 1: Browser automation (no API required)
+## Method 1: Through the browser (no API setup needed)
 
 Claude drives [ads.x.com](https://ads.x.com) directly in Chrome — same pattern as the LinkedIn skill.
 
@@ -85,9 +90,9 @@ Claude hovers the campaign row, **reads back the campaign name from the row** to
 
 ---
 
-## Method 2: X Ads API (v12, current as of 2026)
+## Method 2: X's Ads API (v12, current as of 2026)
 
-The X Ads API is free once approved but requires a separate Ads API application (distinct from general X API access). Apply via the Ads API onboarding page ([docs.x.com/x-ads-api/getting-started](https://docs.x.com/x-ads-api/getting-started)) — approval typically takes a few weeks.
+For bulk work or repeatable setups, you can drive X through their Ads API instead of the browser. It's free to use once approved, but you have to apply separately (this is different from general X developer access). Apply on the [Ads API onboarding page](https://docs.x.com/x-ads-api/getting-started) — approval typically takes a few weeks.
 
 **Base URL:** `https://ads-api.x.com/12/` (current — bump when X releases a new major).
 

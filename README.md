@@ -66,7 +66,7 @@ Claude walks you through the 10-question intake, runs the feasibility gates, ech
 | **Reddit** | Browser, or Reddit Ads API v3 (allow-list) | Paused |
 | **TikTok** | Browser, or TikTok Marketing API v1.3 (approval-gated) | Paused (disabled) |
 
-Full per-platform mechanics, quirks, and delete-after-QA paths live in the platform sub-skills below.
+Full per-platform mechanics, quirks, and cleanup steps live in the platform guides linked below.
 
 ## Skill map
 
@@ -74,7 +74,7 @@ Full per-platform mechanics, quirks, and delete-after-QA paths live in the platf
 - **[Routing tables →](./intake/routing-tables.md)** — which objective each platform uses for a given goal, budget formats and minimums, regulated-category rules, creative sizing per format, and platform-specific recommendations
 - **[Copy generation + anti-slop →](./copy/SKILL.md)** — writes ad copy in your voice, enforces platform character limits, catches slop
 - **[Dry run guide →](./dry-run.md)** — how to preview a campaign on each platform without spending
-- Platform sub-skills: [LinkedIn](./linkedin/SKILL.md) · [Meta](./meta/SKILL.md) · [X](./x/SKILL.md) · [Google](./google/SKILL.md) · [Reddit](./reddit/SKILL.md) · [TikTok](./tiktok/SKILL.md)
+- Per-platform guides: [LinkedIn](./linkedin/SKILL.md) · [Meta](./meta/SKILL.md) · [X](./x/SKILL.md) · [Google](./google/SKILL.md) · [Reddit](./reddit/SKILL.md) · [TikTok](./tiktok/SKILL.md)
 
 ## Example prompts
 
