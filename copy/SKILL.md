@@ -21,7 +21,7 @@ The customer is the hero. Your product is the guide that helps them win.
 | Element | What it is | Example |
 |---|---|---|
 | **Hook** | The problem your hero is stuck with | "Payments that take 3 days to settle" |
-| **Guide** | Your product as the solution | "Eco moves money in seconds, onchain" |
+| **Guide** | Your product as the solution | "[Product] moves money in seconds, onchain" |
 | **CTA** | One clear action | "See how it works" |
 
 Keep the customer's problem in the headline, not your product's features. Features explain what you do; problems explain why they care.
@@ -59,7 +59,7 @@ These patterns weaken copy. Claude checks for all of them and rewrites before pr
 | **Vague superlatives** | "the best", "world-class", "leading" | Cut or replace with a verifiable claim |
 | **Em dashes as drama** | "Payments — reimagined" | Rewrite without the dash. **Scoped to ad copy only** — this rule doesn't apply to the skill's own docs, README, etc. |
 
-**Optional: automated slop check.** If Eco's private slop-scoring script (`copy_tells.py`) is available in your environment, you can pipe copy through it:
+**Optional: automated slop check.** If a slop-scoring script is available in your environment (e.g. an internal `copy_tells.py`), you can pipe copy through it:
 
 ```bash
 echo "your copy here" | python "$COPY_TELLS_PATH"   # if configured

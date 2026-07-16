@@ -195,7 +195,7 @@ Reddit's Financial & Cryptocurrency Products & Services policy: **restricted, no
 
 **Prohibited outright:** single securities/tokens/coins (so promoting a specific stablecoin like "USDC" is banned), ICOs, IDOs, penny stocks, unlicensed banks/fintechs, payday loans, get-rich-quick, celebrity endorsements, liquidity pools, mixers, bots, DAOs without a centralized entity, **crypto loans**, leverage claims, guaranteed returns.
 
-**For Eco (B2B stablecoin infra):** position as payments infrastructure / developer platform / integration / education. Do NOT promote a specific stablecoin ("Buy USDC") — that trips the single-token prohibition. Contact a Reddit rep for regulated-category approval before running.
+**For a B2B stablecoin / crypto infra brand:** position as payments infrastructure / developer platform / integration / education. Do NOT promote a specific stablecoin or token ("Buy USDC") — that trips the single-token prohibition. Contact a Reddit rep for regulated-category approval before running.
 
 Source: [business.reddithelp.com — financial/cryptocurrency policy](https://business.reddithelp.com/s/article/financial-cryptocurrency-products-and-services-policy)
 

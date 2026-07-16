@@ -5,30 +5,32 @@ description: Deploy paid ads across LinkedIn, Meta, X, Google, Reddit, and TikTo
 
 # Agentic Ads — Claude Code Skill
 
-Deploy LinkedIn, Meta, X, Google, Reddit, and TikTok ads from a single prompt. No platform expertise required.
+**One prompt. Six ad platforms. Every launch is paused by default.**
 
-## What this skill does
+Turn Claude Code into a paid-media junior marketer that speaks LinkedIn, Meta, X, Google, Reddit, and TikTok. Answer 10 plain-English questions once — the skill handles objective enums, budget math, targeting spec, creative specs, cold-audience-expansion flags, and regulated-category declarations for whichever platform(s) fit your inputs.
 
-You describe the campaign. Claude handles targeting, placements, budgets, creative attachment, and launch — across any supported platform.
+## Why this exists
+
+- **Never launch by accident.** Every campaign creates as Draft or Paused. Activation requires an explicit `launch` from the operator, after a full confirmation summary echoes back every default the skill applied.
+- **Feasibility gates catch waste before it costs money.** Budget below the platform's practical minimum, conversion goal without a pixel firing, regulated category without the required declaration, creative that doesn't fit the format — all block the launch with the actionable fix, not a silent warning.
+- **Best-practice defaults, not bolt-ons.** The auto-expansion flags that quietly widen audiences and inflate CPMs (LinkedIn LAN, Audience Expansion, Meta Advantage+ Audience, X Optimized Targeting, Google Search Partners + AI Max, Reddit Expand Targeting, TikTok Smart Targeting) are all **off by default**. Turn them on explicitly if you want them.
+- **Sourced, not vibes.** Every enum, budget unit, minimum threshold, and regulated-category rule is cross-checked against primary platform docs or verified integrator schemas ([routing tables](./intake/routing-tables.md)). Unverifiable claims are flagged so you know what to sandbox-verify.
+- **One intake, six platforms.** Same 10 questions whether you're running a LinkedIn Document ad or a TikTok Spark Ad. Platform-specific follow-ups (LinkedIn Job Function, Reddit subreddits, Google seed keywords, TikTok Spark auth) only asked when relevant.
 
 ## Supported platforms
 
-| Platform | Method | Status |
+| Platform | Method | Draft/paused state |
 |---|---|---|
-| LinkedIn | Browser automation (Campaign Manager) | ✅ Production-ready (live launches at Eco) |
-| Meta | `meta-ads` PyPI CLI (Marketing API; blog-referenced, not formally Meta-attributed) | 🚧 Live create→delete 2026-07-04 via the third-party npm fallback (✅); PyPI CLI command surface verified against the binary — live re-run pending a fresh access token (📝) |
-| X (Twitter) | Browser automation or X Ads API | ✅ Browser verified 2026-07-09 (live draft→delete); API QA pending (approval-gated) |
-| Google | Browser automation or Google Ads API | 🚧 Create/draft verified 2026-07-09 (Eco 2025); saved-draft delete leg unverified — no UI delete once a draft is saved, so QA path is **Discard-on-exit**; publish gated by "Confirm it's you"; API QA pending (approval-gated) |
-| Reddit | Browser automation or Reddit Ads API v3 | 📝 Documented, not live-verified. Paused-state field is **`configured_status`** (verified 2026-07-12 against Fivetran/dltHub/MCP schemas — audit's Critical finding resolved). API write scope requires Reddit ads-team allow-list. |
-| TikTok | Browser automation or TikTok Marketing API v1.3 | 📝 Documented, not live-verified — see tiktok/ |
+| LinkedIn | Browser automation (Campaign Manager) | Draft |
+| Meta | `meta-ads` PyPI CLI (Marketing API) | PAUSED |
+| X (Twitter) | Browser automation or X Ads API v12 | Draft |
+| Google | Browser automation or Google Ads API | Paused / Campaign Drafts |
+| Reddit | Browser automation or Reddit Ads API v3 | `configured_status: PAUSED` |
+| TikTok | Browser automation or TikTok Marketing API v1.3 | `operation_status: DISABLE` |
 
-> **Verification legend:**
-> - **✅** = live create→delete cycle run and confirmed on this environment
-> - **🚧** = partially verified with a documented gap (see per-platform QA banner)
-> - **📝** = commands/UI steps documented but not exercised end-to-end here (typically blocked on API credentials requiring platform approval, or on unverified field names — see per-platform QA banner)
-> - **⚠️** = documented safety-critical caveat operators must resolve before shipping (currently: none — Reddit paused-field caveat was resolved 2026-07-12)
->
-> Browser-automation paths always require the Claude for Chrome extension logged into that platform.
+Per-platform verification status is tracked per-file (see the QA banner in each platform's SKILL.md). Live-verified paths get ✅, partially verified with a documented gap get 🚧, documented-but-not-live-run get 📝.
+
+Browser-automation paths always require the Claude for Chrome extension logged into that platform.
 
 ## Quickstart
 
@@ -58,11 +60,6 @@ Every platform in this skill drives its Ads Manager UI in your real Chrome (as t
 ## Dry run mode
 
 Every platform supports a preview/validate step before any money is spent. See [dry-run.md](./dry-run.md).
-
-## Real-world results
-
-Deployed at [Eco](https://eco.com) — **3 LinkedIn Campaigns** covering three geo clusters (US/CA/AU, Singapore, UK) launched in a single session.
-CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10×).
 
 ## Prompt examples
 

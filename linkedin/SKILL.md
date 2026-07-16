@@ -5,9 +5,9 @@ description: Deploy LinkedIn ad campaigns via browser automation of Campaign Man
 
 # LinkedIn Ads — Skill
 
-Claude runs LinkedIn campaigns two ways — via browser automation of Campaign Manager (the default; live-launched at Eco) or via the LinkedIn Marketing API (documented but not yet used here). Both leave campaigns in **Draft** state until you explicitly say "launch."
+Claude runs LinkedIn campaigns two ways — via browser automation of Campaign Manager (the default) or via the LinkedIn Marketing API (documented, not yet exercised end-to-end from this environment). Both leave campaigns in **Draft** state until you explicitly say "launch."
 
-> **QA status (2026-04, ongoing use): ✅ Method 1 (browser) production-ready.** Deployed at Eco: 3 campaigns across US/CA/AU, Singapore, and UK launched in a single session. Live results: CTR 3.9–4.6% (platform average ~0.44%), CPE $0.39–$0.79. LAN and Audience Expansion off enforcement, nativeSetter pattern for React inputs, and the "ad format change creates a new campaign" workaround are all covered by that live experience.
+> **QA status: ✅ Method 1 (browser) production-ready.** LAN and Audience Expansion off enforcement, nativeSetter pattern for React inputs, and the "ad format change creates a new campaign" workaround are all covered by live launch experience.
 >
 > **QA status Method 2 (LinkedIn Marketing API): 📝 Documented, not yet exercised.** LinkedIn's Marketing API requires developer-app approval (Marketing Developer Platform program) and OAuth2 with `r_ads`, `w_ads`, `r_ads_reporting` scopes. Field names below are from LinkedIn's public API reference; verify against a sandbox call before shipping automation.
 
@@ -271,11 +271,3 @@ Or `DELETE https://api.linkedin.com/rest/adCampaigns/{id}` if the account permit
 
 Field names, endpoint paths, and status enum values above come from LinkedIn's public docs; treat them as accurate but unverified from this environment. Confirm against a sandbox call on the developer test-tier before shipping automation.
 
----
-
-## Validated live results (Method 1)
-
-- Deployed at [Eco](https://eco.com)
-- **CTR:** 3.9–4.6% (LinkedIn platform average: ~0.44% — roughly 10× baseline)
-- **CPE:** $0.39–$0.79
-- **Scale:** 3 campaigns across US/CA/AU, Singapore, UK — launched in one session

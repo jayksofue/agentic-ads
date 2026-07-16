@@ -1,92 +1,110 @@
 # Agentic Ads
 
-Deploy LinkedIn, Meta, X, Google, Reddit, and TikTok ads with a single Claude Code prompt.
+**One prompt. Six ad platforms. Every launch is paused by default.**
 
-No platform expertise required. You define the audience and budget. Claude handles targeting, placements, creative attachment, and launch.
+Agentic Ads turns Claude Code into a paid-media junior marketer that speaks LinkedIn, Meta, X, Google, Reddit, and TikTok. Answer 10 plain-English questions once — Claude handles the objective enums, budget math, targeting spec, creative specs, cold-audience-expansion flags, and regulated-category declarations for whichever platform(s) fit your inputs.
 
-## Results
+## Why use this
 
-Deployed at [Eco](https://eco.com):
-- 3 LinkedIn Campaigns covering three geo clusters (US/CA/AU, Singapore, UK) — launched in one session
-- CTR: 3.9–4.6% vs. LinkedIn's 0.44% platform average (~10×)
+**Never launch by accident.** Every campaign is created as Draft or Paused. Activating requires an explicit `launch` from you, after Claude echoes back a full confirmation summary — including every default it applied so nothing is hidden.
+
+**Feasibility gates catch waste before it costs you.** Five hard checks run before any create call:
+- Budget × duration hits the platform's practical minimum
+- Conversion goal has a pixel firing with real event volume
+- Regulated category has the correct declaration or certification
+- Creative aspect ratio / duration / size matches the format
+- Your account role can actually create campaigns
+
+If any fail, Claude blocks the launch with the exact fix — not a silent warning that lets your money burn.
+
+**Best practices baked in, not bolted on.** The auto-expansion flags that quietly widen your audience and inflate your CPM — LinkedIn Audience Network, Audience Expansion, Meta Advantage+ Audience, X Optimized Targeting, Google Search Partners + AI Max, Reddit Expand Targeting, TikTok Smart Targeting — are all **off by default**. Turn them on explicitly if you want them; you won't get them by accident.
+
+**Sourced, not vibes.** Every objective enum, budget unit, minimum threshold, expansion-flag name, and regulated-category rule is cross-checked against primary docs or verified integrator schemas. The [routing tables](./intake/routing-tables.md) list every source URL. Where a claim couldn't be primary-sourced, it's called out at the top of that file so you know what to sandbox-verify before shipping.
+
+**One intake, six platforms.** Same 10 questions whether you're running a LinkedIn Document ad or a TikTok Spark Ad. Platform-specific mechanics (LinkedIn Job Function + Seniority, Reddit subreddits, Google seed keywords, TikTok Spark authorization) get asked only when relevant.
+
+**Copy that doesn't sound like an AI wrote it.** Anti-slop check catches "seamless / innovative / cutting-edge," passive voice, weak CTAs, and em-dashes-as-drama before the ad ships. Character limits enforced per platform (LinkedIn 200 hard / 70 to avoid truncation, Meta 40, Google RSA 3–15 headlines / 2–4 descriptions).
 
 ## Quickstart
 
-### Step 0 — Browser extension (required for every platform)
+### 1. Install the browser extension
 
-Every platform in this skill drives its Ads Manager UI in your real Chrome (as a fallback for the API-only platforms, and as the primary path for platforms without a usable API tier — LinkedIn, Reddit).
+The skill drives each platform's Ads Manager UI in your real Chrome — required across the board (some platforms have API paths too, but browser is always the fallback):
 
 1. Install the **Claude for Chrome** extension from the Chrome Web Store
 2. In Claude Code, enable it under Settings → MCP → Browser
-3. Log into every ad platform you plan to use (LinkedIn Campaign Manager, ads.reddit.com, ads.x.com, ads.google.com, ads.tiktok.com, business.facebook.com) in Chrome before starting
+3. Log into every ad platform you plan to use (LinkedIn Campaign Manager, business.facebook.com, ads.x.com, ads.google.com, ads.reddit.com, ads.tiktok.com) in Chrome before starting
 
-### Step 1 — Install as a Claude Code skill
+### 2. Install as a Claude Code skill
 
-1. Install [Claude Code](https://claude.ai/code)
-2. Clone this repo and install it as a skill by symlinking (or copying) into your Claude skills directory:
-   ```bash
-   git clone https://github.com/jayksofue/agentic-ads.git
-   mkdir -p ~/.claude/skills
-   ln -s "$PWD/agentic-ads" ~/.claude/skills/agentic-ads
-   ```
-   (Or drop the folder in `.claude/skills/` inside a specific project to scope it there.) The skill's YAML frontmatter registers it as `agentic-ads`.
-3. In Claude Code, say **"run agentic-ads"** (or reference the skill by name). Claude will ask which platform + what you want to launch.
+```bash
+git clone https://github.com/jayksofue/agentic-ads.git
+mkdir -p ~/.claude/skills
+ln -s "$PWD/agentic-ads" ~/.claude/skills/agentic-ads
+```
+
+Or drop the folder in `.claude/skills/` inside a specific project to scope it there. The skill's YAML frontmatter registers it as `agentic-ads`.
+
+### 3. Run it
+
+In [Claude Code](https://claude.ai/code):
+
+```
+run agentic-ads
+```
+
+Claude walks you through the 10-question intake, runs the feasibility gates, echoes back everything it's about to do, and waits for your `launch`.
 
 ## Platforms
 
-| Platform | Method | Dry run |
+| Platform | Method | Draft/paused state |
 |---|---|---|
-| **LinkedIn** | Browser automation (Campaign Manager) | Draft status |
-| **Meta** | `meta-ads` PyPI CLI (blog-referenced, not formally Meta-attributed) | Paused campaign, then delete (no dry-run flag; npm fallback has one) |
-| **X** | Browser automation or X Ads API (requires approval) | Paused campaign |
-| **Google** | Browser automation or Google Ads API (requires approval) | Paused campaign / Campaign Drafts |
-| **Reddit** | Browser automation or Reddit Ads API | Paused campaign |
-| **TikTok** | Browser automation or TikTok Marketing API | Disabled campaign / sandbox |
+| **LinkedIn** | Browser automation (Campaign Manager) | Draft |
+| **Meta** | `meta-ads` PyPI CLI (Marketing API) | PAUSED |
+| **X** | Browser automation or X Ads API v12 | Draft |
+| **Google** | Browser automation or Google Ads API | Paused / Campaign Drafts |
+| **Reddit** | Browser automation or Reddit Ads API v3 | `configured_status: PAUSED` |
+| **TikTok** | Browser automation or TikTok Marketing API v1.3 | `operation_status: DISABLE` |
 
-## Platform guides
+Full per-platform mechanics + gotchas live in the platform sub-skills below.
 
-- [Guided intake (start here) →](./intake/SKILL.md) — the 10-question walkthrough that runs before any campaign
-- [Verified routing tables →](./intake/routing-tables.md) — goal→enum maps, budget units + minimums, regulated-category rules, creative specs (sourced against 2026-07-12 primary docs)
-- [LinkedIn setup →](./linkedin/SKILL.md)
-- [Meta setup →](./meta/SKILL.md)
-- [X setup →](./x/SKILL.md)
-- [Google setup →](./google/SKILL.md)
-- [Reddit setup →](./reddit/SKILL.md)
-- [TikTok setup →](./tiktok/SKILL.md)
-- [Dry run guide →](./dry-run.md)
+## Skill map
+
+- **[Guided intake (start here) →](./intake/SKILL.md)** — the 10-question walkthrough + feasibility gates that runs before any campaign
+- **[Routing tables →](./intake/routing-tables.md)** — verified goal→enum maps, budget units + minimums, regulated-category rules, creative specs, per-platform recommendation rules
+- **[Copy generation + anti-slop →](./copy/SKILL.md)** — writes ad copy in your voice, enforces platform character limits, catches slop
+- **[Dry run guide →](./dry-run.md)** — per-platform preview / no-spend paths
+- Platform sub-skills: [LinkedIn](./linkedin/SKILL.md) · [Meta](./meta/SKILL.md) · [X](./x/SKILL.md) · [Google](./google/SKILL.md) · [Reddit](./reddit/SKILL.md) · [TikTok](./tiktok/SKILL.md)
 
 ## Example prompts
 
+Once you're set up, any of these works. Claude asks anything it needs and confirms before creating:
+
 ```
-Launch a LinkedIn document ad targeting CFOs in financial services.
-$500 lifetime budget. July 1–31. LAN off. Audience expansion off.
+Run agentic-ads. I want to launch a LinkedIn Document ad for our CFO
+audience in financial services. $500 lifetime, US/UK/Singapore.
 ```
 
 ```
-Create a Meta engagement campaign for fintech decision-makers in the US.
-$1,000 monthly budget. Dry run first.
+Run agentic-ads. Cold prospecting on Meta for a B2B fintech product.
+US developers, $1000/mo. I have a 1:1 image and a landing page.
 ```
 
 ```
-Deploy an X promoted post campaign targeting crypto and DeFi audiences.
-$300 budget. Show me the payload before launching.
+Run agentic-ads. Reddit — target r/webdev, r/programming, r/devops.
+$50/day for 2 weeks. Promote our existing post [url]. Traffic goal.
 ```
 
 ```
-Create a Google Search campaign for B2B payments keywords.
-$50/day. Target CPA: $15. Validate only — don't submit yet.
+Run agentic-ads. Google Search for "stablecoin payments API" and related
+B2B keywords. Cold start, $30/day, no conversion history yet.
 ```
 
-## How it works
+## Design principles
 
-Claude uses platform-specific methods per ad network:
-
-- **LinkedIn**: Drives Campaign Manager via browser using the `nativeSetter` pattern for React inputs. Handles LAN, Audience Expansion, date pickers, and format selection automatically. Creates as Draft.
-- **Meta**: Calls the Marketing API directly through the `meta-ads` PyPI CLI (Python, `pip install meta-ads`, binary `meta`). This is the CLI referenced in Meta's April 2026 "Introducing Ads CLI" developer blog post — PyPI author metadata is anonymous, so the skill treats it as blog-referenced rather than formally attributed. Live create→delete verified 2026-07-04 (via the third-party npm `meta-ads` fallback); PyPI CLI's commands + flag surface verified against the binary, live re-run pending a fresh access token.
-- **X**: Drives Ads Manager via browser. Handles objective-specific ad formats (website card for traffic, standard post for reach/engagements/video). Turns off Optimize Targeting by default. Save-draft-from-Review path live-verified 2026-07-09.
-- **Google**: Drives Google Ads via browser. Handles campaign type selection, Video subtypes, turns off Display Network and AI Max (Final URL expansion + Text customization) by default. Create/draft flow live-verified 2026-07-09 on Eco 2025 — note saved drafts have no UI delete, so QA path is Discard-on-exit.
-- **Reddit**: Drives ads.reddit.com via browser (primary) or the Reddit Ads API v3 (allow-list required). Subreddit/community targeting is the platform's main advantage. API paused-field name unverified against Reddit's private v3 spec — see reddit/ safety banner.
-- **TikTok**: Drives ads.tiktok.com via browser or calls the TikTok Marketing API v1.3 (developer-app review required). Video-first; enforces TikTok-only placements (not Pangle) and disables Automatic Targeting by default.
+1. **Prescriptive on safety, advisory on strategy.** The skill enforces what would fail or waste money (feasibility gates, correct enum names, correct pixel state, correct regulated-category declarations). It surfaces trade-offs where you actually have a choice — never picks the platform for you without knowing your inputs.
+2. **Never launch on hidden defaults.** Every default is echoed in the confirmation summary before activation. Activation requires an explicit `launch` word.
+3. **Honest about what's verified vs documented.** Live-verified paths get ✅. Partially verified with a documented gap get 🚧. Documented but not exercised end-to-end from this environment get 📝. The status table on the [root skill](./SKILL.md) reflects it per platform.
 
 ## License
 

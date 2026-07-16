@@ -18,7 +18,7 @@ Ask these in order. Each question has a **why-it-matters** line, an **example**,
 ### 1. What are you promoting? (brand + product in one line)
 
 > **Why:** anchors copy generation + detects regulated categories (finance / crypto / health / employment / housing / gambling / politics / alcohol)
-> **Example:** "Eco — stablecoin payments infrastructure for developers" · "Nike Pegasus 41 running shoes" · "our webinar on incident response for SREs"
+> **Example:** "our SaaS invoicing tool for freelancers" · "Nike Pegasus 41 running shoes" · "our webinar on incident response for SREs" · "our B2B stablecoin payments infrastructure"
 
 Detect regulated category from this answer. Set `regulated_category` internally to one of: `financial_services` | `crypto` | `health` | `employment` | `housing` | `credit` | `gambling` | `politics` | `alcohol` | `none`. Confirm with the user if the detection matters ("this looks like a financial-services ad — is that right? affects which platforms can run it and what declarations they need").
 

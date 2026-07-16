@@ -188,7 +188,7 @@ Meta is progressively forcing this ON for Sales/Leads in some markets — `= 0` 
 | Crypto allowed? | Yes with **written permission via Business Suite → Authorizations & Verifications** — separate from `special_ad_categories` |
 | Crypto scope requiring permission | Exchanges, borrow/lend, enhanced wallets, mining software, investment solicitation |
 | Not requiring permission | Storage-only wallets, blockchain B2B services, mining hardware, tax services, education without product offer |
-| For Eco (stablecoin B2B infra) | Generally outside written-permission scope IF creative avoids consumer investment/yield/staking language. Any consumer-facing US ad mentioning buying/holding/earning yield triggers the requirement. |
+| For a stablecoin / crypto B2B infra brand | Generally outside written-permission scope IF creative avoids consumer investment/yield/staking language. Any consumer-facing US ad mentioning buying/holding/earning yield triggers the requirement. |
 
 Source: https://transparency.meta.com/policies/ad-standards/restricted-goods-services/cryptocurrency-products-and-services/
 
@@ -222,7 +222,7 @@ Source: https://transparency.meta.com/policies/ad-standards/restricted-goods-ser
 3. If `daily_budget < 5× expected CPA` → warn: won't exit learning; consolidate ad sets or raise budget.
 4. If `special_ad_categories` set → auto-disable detailed interests, age narrowing, gender, ZIP radius <15mi; lookalike ≥1–15%.
 5. If crypto exchange / DeFi / staking-wallet / investment-solicitation → require written permission before create.
-6. If stablecoin B2B (Eco) → `special_ad_categories=[]` BUT flag creative mentioning consumer yield/staking/holding — triggers crypto permission even for infra brands.
+6. If stablecoin / crypto B2B infra brand → `special_ad_categories=[]` BUT flag creative mentioning consumer yield/staking/holding — triggers crypto permission even for infra brands.
 7. Always create as `status=PAUSED`, human-review in Ads Manager, then flip `ACTIVE`.
 8. Set `publisher_platforms` explicitly; omit `audience_network` unless intentional.
 9. If audience < 500K prospecting → widen; algo needs 1M–10M for stable learning.
@@ -328,7 +328,7 @@ Source: https://business.x.com/en/help/ads-policies/ads-content-policies/financi
 
 1. Cold TOF prospecting → default `REACH`, not `WEBSITE_CLICKS` (X auction is smaller than Meta/Google; cheap CPM seeds retargeting pool).
 2. Any conversion/app-install objective with no history → `bid_strategy=AUTO`.
-3. Crypto/stablecoin advertiser (Eco) → verify X Cryptocurrency/DeFi certification via business.x.com AND country registration BEFORE any create; ICOs/IEOs/IDExOs and mining forbidden even with cert.
+3. Crypto / stablecoin advertiser → verify X Cryptocurrency/DeFi certification via business.x.com AND country registration BEFORE any create; ICOs/IEOs/IDExOs and mining forbidden even with cert.
 4. Educational content only, no product CTA → advertise without financial services cert (X explicitly permits blockchain/crypto/DeFi education).
 5. Programmatic creation → `entity_status=PAUSED`, verify, then `ACTIVE`.
 6. Custom Audience upload → ≥500 matched users minimum; below ~10K delivery is thin — prefer Follower LAL / Interest / Keyword / Conversation Topic.
@@ -410,7 +410,7 @@ Source: https://developers.google.com/google-ads/api/reference/rpc/v23/CampaignS
 | Certification | "Cryptocurrencies and related products" — apply inside Google Ads (Admin → Policy → Account → Apply for certification) |
 | Permitted with cert | (1) Exchanges (2) Software wallets (3) Hardware wallets (4) Coin trusts (US only) |
 | Prohibited (no cert available) | ICOs, DeFi trading protocols, buying/selling/trading crypto, crypto loans, IDOs, liquidity pools, unhosted software wallets, unregulated dApps, aggregator/comparison sites, trading signals, investment advice, NFT gambling |
-| For Eco (stablecoin infra) | Position strictly B2B — no messaging about acquiring/holding/trading/yield on stablecoins |
+| For a stablecoin / crypto infra brand | Position strictly B2B — no messaging about acquiring/holding/trading/yield on stablecoins |
 | Approved locations | ~40 countries: US (FinCEN MSB + state MTL), EU (MiCA CASP since Apr 23, 2025), UK (FCA), CH (FINMA), JP (FSA), UAE (VARA/FSRA), etc. Non-listed = ineligible. |
 | Declaration API field | `customer.financial_services_verification_status` (applied via UI, not campaign-level) |
 
@@ -546,7 +546,7 @@ Source: https://business.reddithelp.com/s/article/financial-cryptocurrency-produ
 
 ### Recommendation rules
 
-1. Crypto/stablecoin/DeFi (Eco) → note licensing (FinCEN reg or exemption) required; crypto loans banned; may route through rep.
+1. Crypto / stablecoin / DeFi advertisers → note licensing (FinCEN reg or exemption) required; crypto loans banned; may route through rep.
 2. Cold audience create → `expand_targeting=false`; start with subreddit targeting, not interest categories.
 3. Daily budget <$50 → warn: technical min $5 but need $50–100/day for algo to learn.
 4. Conversions / App Installs → require Reddit Pixel or MMP firing events before create; `goal_type=CONVERSIONS` and `optimization_strategy_type=DOWNSTREAM_CONVERSIONS` need signal.
@@ -628,7 +628,7 @@ Source: https://business-api.tiktok.com/portal/docs?id=1739318962329602
 | Crypto allowed? | **Prohibited in the US** under the Financial Services policy — cryptocurrency, exchanges, wallets, NFT trading, crypto advisory all listed as prohibited |
 | Some LatAm markets | Argentina, Chile, Colombia, Ecuador, Mexico, Peru, Uruguay — may be allowed with local license + 18+ + TikTok Sales Rep approval |
 | Self-serve | Not available for regulated financial — Sales Rep application required |
-| For Eco (stablecoin) | Do NOT run in US; other geos require rep + Verified Business Account + 18+ gating + local license + disclaimers |
+| For a stablecoin / crypto infra brand | Do NOT run in US; other geos require rep + Verified Business Account + 18+ gating + local license + disclaimers |
 | `special_industries` enum | `HOUSING`, `EMPLOYMENT`, `CREDIT` (US/CA anti-discrimination — NOT crypto/fintech). Once selected, cannot be changed or re-enabled — only removed. |
 | Declaration API field | `special_industries` (US/CA anti-discrimination); crypto/finance is policy-gated at account level, not campaign field |
 
@@ -659,7 +659,7 @@ Source: https://ads.tiktok.com/help/article/tiktok-ads-policy-financial-services
 
 ### Recommendation rules
 
-1. Stablecoin/crypto (Eco) → require Verified Business Account + Sales Rep engagement; DO NOT run US ads; only some LatAm geos permitted with license + 18+ + rep approval.
+1. Stablecoin / crypto advertisers → require Verified Business Account + Sales Rep engagement; DO NOT run US ads; only some LatAm geos permitted with license + 18+ + rep approval.
 2. Programmatic create → `operation_status=DISABLE`, verify downstream (ad group + ad + creative + preview), then flip `ENABLE`. Exception: RF campaigns can't be created `DISABLE`.
 3. `WEB_CONVERSIONS` or `PRODUCT_SALES` → require Pixel + Events API with ≥50 events/7d on target event before launch.
 4. Cold audience, no signal → leave `smart_audience_enabled` and `smart_interest_behavior_enabled` OFF for first 2 weeks; broaden manually (large geo + 18–54 + no interest layering); budget ≥ 20× target CPA/day at ad-group level.

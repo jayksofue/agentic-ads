@@ -7,13 +7,13 @@ description: Deploy Google Ads campaigns via browser automation (ads.google.com)
 
 Claude can run Google campaigns two ways — via browser automation (works today, no API approval needed) or via the Google Ads API (requires a developer token). Both support draft/paused mode.
 
-> **QA status (2026-07-09): ✅ Create/draft flow verified; ⚠️ draft deletion is a known gap.** Ran live on the active **Eco 2025** account (237-467-3790): created a Search campaign via "Create a campaign without guidance" → named it (nativeSetter) → the documented "Save as a campaign draft?" modal appeared → Saved → the draft persisted and was confirmed in the campaigns table under "Drafts in progress" with a real campaign ID. Nothing served or spent.
+> **QA status: 🚧 Create/draft flow verified live; draft deletion is a known gap.** Method 1's create → name → Save-as-draft flow was live-verified end-to-end (Search campaign created via "Create a campaign without guidance" → name entered via nativeSetter → "Save as a campaign draft?" modal → Saved → draft confirmed in the campaigns table under "Drafts in progress" with a real campaign ID; nothing served or spent).
 >
 > **Important cleanup finding:** once a "draft in progress" is **saved**, it has **no delete control in the campaigns UI** — no inline trash on the row, no actions column, the bulk **Edit is disabled** for drafts, the builder has no delete button, and auto-save means clicking the close (X) no longer prompts the Save/Discard modal. So for QA, **click Discard in the exit modal instead of Save** (the documented cleanup) — do NOT Save the draft. To remove an already-saved draft, use Google Ads Editor / the API, or finish+publish it as a PAUSED campaign (real campaigns do expose a Remove status control) and then remove it.
 >
-> First attempt hit a different account ("Pump The Beat") that was suspended/canceled, which disables "New campaign" entirely — switch accounts via the account selector. Method 2 (Google Ads API) remains unverified: no developer token configured. Note that **Basic Access is also approval-gated** (~5-business-day review); new developer tokens start at Test Account Access only.
+> Note: if you hit a suspended/canceled ad account, Google disables "New campaign" entirely — switch accounts via the account selector. Method 2 (Google Ads API) remains unverified: no developer token configured. Note that **Basic Access is also approval-gated** (~5-business-day review); new developer tokens start at Test Account Access only.
 >
-> **⚠️ Cleanup circular-dependency (2026-07-09 attempt):** the "finish + publish PAUSED, then remove" cleanup path for a saved draft was tested and hit **Google's "Confirm it's you" identity-verification modal at Publish** — an authentication gate Claude cannot pass. That means for accounts with the identity gate on, the only fully-agentic recovery for a saved draft is Google Ads Editor or the API (once configured). For QA runs, prevent the problem: **Discard on exit; never Save**.
+> **⚠️ Cleanup circular-dependency:** the "finish + publish PAUSED, then remove" cleanup path for a saved draft was tested and hit **Google's "Confirm it's you" identity-verification modal at Publish** — an authentication gate Claude cannot pass. That means for accounts with the identity gate on, the only fully-agentic recovery for a saved draft is Google Ads Editor or the API (once configured). For QA runs, prevent the problem: **Discard on exit; never Save**.
 
 ---
 
@@ -26,7 +26,7 @@ Claude drives [ads.google.com](https://ads.google.com) directly in Chrome — sa
 1. **Claude for Chrome extension** — install from the Chrome Web Store, enable under Claude Code Settings → MCP → Browser
 2. Log into [Google Ads](https://ads.google.com) in Chrome before starting
 3. Your Customer ID — 10-digit number shown in the top right of Google Ads (format: XXX-XXX-XXXX)
-4. **Payment method on file** (Billing → Payment methods) and **account in Good Standing**. Google disables "New campaign" entirely on suspended/canceled accounts (verified 2026-07-09 on Pump The Beat — switch accounts if the button is greyed out).
+4. **Payment method on file** (Billing → Payment methods) and **account in Good Standing**. Google disables "New campaign" entirely on suspended/canceled accounts — switch accounts if the button is greyed out.
 
 ### What Claude does
 
