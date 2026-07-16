@@ -5,7 +5,7 @@ description: Deploy paid ads across LinkedIn, Meta, X, Google, Reddit, and TikTo
 
 # Agentic Ads — Claude Code Skill
 
-**One prompt. Six ad platforms. Every launch is paused by default.**
+**One prompt. Six ad platforms. Nothing goes live without your say-so.**
 
 Turn Claude Code into a paid-media junior marketer that speaks LinkedIn, Meta, X, Google, Reddit, and TikTok. Answer 10 plain-English questions once — the skill handles objective enums, budget math, targeting spec, creative specs, cold-audience-expansion flags, and regulated-category declarations for whichever platform(s) fit your inputs.
 

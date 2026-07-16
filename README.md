@@ -1,6 +1,6 @@
 # Agentic Ads
 
-**One prompt. Six ad platforms. Every launch is paused by default.**
+**One prompt. Six ad platforms. Nothing goes live without your say-so.**
 
 Agentic Ads turns Claude Code into a paid-media junior marketer that speaks LinkedIn, Meta, X, Google, Reddit, and TikTok. Answer 10 plain-English questions once — Claude handles the objective enums, budget math, targeting spec, creative specs, cold-audience-expansion flags, and regulated-category declarations for whichever platform(s) fit your inputs.
 
