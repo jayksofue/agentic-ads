@@ -19,14 +19,14 @@ You describe the campaign. Claude handles targeting, placements, budgets, creati
 | Meta | `meta-ads` PyPI CLI (Marketing API; blog-referenced, not formally Meta-attributed) | 🚧 Live create→delete 2026-07-04 via the third-party npm fallback (✅); PyPI CLI command surface verified against the binary — live re-run pending a fresh access token (📝) |
 | X (Twitter) | Browser automation or X Ads API | ✅ Browser verified 2026-07-09 (live draft→delete); API QA pending (approval-gated) |
 | Google | Browser automation or Google Ads API | 🚧 Create/draft verified 2026-07-09 (Eco 2025); saved-draft delete leg unverified — no UI delete once a draft is saved, so QA path is **Discard-on-exit**; publish gated by "Confirm it's you"; API QA pending (approval-gated) |
-| Reddit | Browser automation or Reddit Ads API v3 | 📝 Documented, not live-verified — API paused-field name (`is_enabled` vs `configured_status`) needs sandbox confirmation before shipping (see reddit/ safety banner) |
+| Reddit | Browser automation or Reddit Ads API v3 | 📝 Documented, not live-verified. Paused-state field is **`configured_status`** (verified 2026-07-12 against Fivetran/dltHub/MCP schemas — audit's Critical finding resolved). API write scope requires Reddit ads-team allow-list. |
 | TikTok | Browser automation or TikTok Marketing API v1.3 | 📝 Documented, not live-verified — see tiktok/ |
 
 > **Verification legend:**
 > - **✅** = live create→delete cycle run and confirmed on this environment
 > - **🚧** = partially verified with a documented gap (see per-platform QA banner)
 > - **📝** = commands/UI steps documented but not exercised end-to-end here (typically blocked on API credentials requiring platform approval, or on unverified field names — see per-platform QA banner)
-> - **⚠️** = documented safety-critical caveat operators must resolve before shipping (currently: Reddit paused-state field name)
+> - **⚠️** = documented safety-critical caveat operators must resolve before shipping (currently: none — Reddit paused-field caveat was resolved 2026-07-12)
 >
 > Browser-automation paths always require the Claude for Chrome extension logged into that platform.
 

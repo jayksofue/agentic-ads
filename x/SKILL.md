@@ -46,7 +46,7 @@ Claude navigates X Ads Manager, creates a campaign, sets objective, audience, bu
 | Issue | Fix |
 |---|---|
 | React inputs ignore `.value =` assignment | Uses nativeSetter pattern: `Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set` |
-| "Optimize targeting" ON by default | Turn off for precise audience control — it's X's AI audience expansion (same as LinkedIn Audience Expansion) |
+| **Audience Expansion vs Optimized Targeting** (two different features) | **Audience Expansion** is an opt-in checkbox (Defined / Expanded / Broad) — NOT default on. Not supported on App Installs or Website Traffic (they use Automated Targeting instead). Leave on **Defined** for controlled audiences. **Optimized Targeting** is a separate campaign-level setting only exposed in Advanced flow — turn OFF for cold audiences where you want to hold the targeting you set. These were conflated in an earlier version of the skill; they're distinct. |
 | Website traffic: extra required ad fields | Must supply Website URL + Headline + media — it creates a "website card" format, not a plain post |
 | Website traffic: Dynamic Product Ads field | Appears at ad group level — toggle for e-commerce catalog ads; leave off for standard campaigns |
 | 4 specific placements available | Home timeline, Search results, Profiles, Replies — all on by default; use "Choose specific placements" to exclude any |
@@ -124,7 +124,7 @@ Create an X promoted post campaign:
 - Dry run: yes/no
 ```
 
-**Objective enum note:** valid v12 values are `ENGAGEMENTS` (plural, not `ENGAGEMENT`), `REACH` (not `AWARENESS` — that objective was renamed years ago), `WEBSITE_CLICKS`, `FOLLOWERS`, `VIDEO_VIEWS`, `APP_INSTALLS`, `APP_ENGAGEMENTS`, `PREROLL_VIEWS`. Older names (`AWARENESS`, `ENGAGEMENT` singular) will be rejected.
+**Objective enum note (verified 2026-07-12 against docs.x.com):** valid v12 values are `ENGAGEMENTS` (plural, not `ENGAGEMENT`), `REACH` (not `AWARENESS` — that objective was renamed years ago), `WEBSITE_CLICKS`, `WEBSITE_CONVERSIONS`, **`FOLLOWERS`** (native — do not route to another platform), `VIDEO_VIEWS`, **`PREROLL_VIEWS`** (premium pre-roll on the Amplify network), `APP_INSTALLS`, `APP_ENGAGEMENTS`. Older names (`AWARENESS`, singular `ENGAGEMENT`) will be rejected. X has **no native LEADS objective** — Lead Gen Cards were deprecated; for leads use `WEBSITE_CONVERSIONS` + a landing-page form.
 
 **Budget unit:** X Ads API expresses budgets in **micros of the local currency** — `total_budget_amount_local_micro` and `daily_budget_amount_local_micro`. For USD: `$1 = 1,000,000 micros`, so `$50/day = 50000000`. This mirrors Reddit's convention but differs from Meta (cents) and TikTok (whole dollars). A missing `_micro` suffix or a cents value is a 6-order-of-magnitude foot-gun — always sanity-check the number before submitting.
 

@@ -52,7 +52,7 @@ TikTok's ad-group/campaign objectives: **Reach**, **Traffic**, **Video Views**, 
 | Issue | Fix |
 |---|---|
 | React inputs ignore `.value =` assignment | Uses nativeSetter pattern: `Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set` |
-| Automatic Targeting / Smart Targeting on by default | Turn off for a controlled audience (TikTok's equivalent of Meta Advantage+ / LinkedIn audience expansion) |
+| Smart Targeting (audience + interest/behavior expansion) | TikTok's equivalent of Meta Advantage+ / LinkedIn audience expansion. **Fields split into two booleans** (both opt-in, default off): `smart_audience_enabled` and `smart_interest_behavior_enabled`. The older `auto_targeting_enabled` field was **deprecated June 2024** — cannot be enabled anymore; ignore it. Keep both smart-targeting fields off for cold-audience runs |
 | Pangle + other placements on by default | Under Placements, switch from Automatic to **Select placement** and choose TikTok only if you don't want the Pangle audience network / News Feed apps |
 | Minimum budget enforced | TikTok enforces higher minimums than other platforms — roughly **$50/day campaign** (CBO) and **$20/day ad group**. A budget below the minimum blocks the ad group |
 | Creative required to publish | TikTok ads are video-first. You can promote an existing post (**Spark Ad**) or upload a video; a plain post won't publish without a video/image |
@@ -137,14 +137,15 @@ Create in order: **campaign → ad group → ad**. Targeting, bid, schedule, and
 }
 ```
 
-**Key API behaviors (from the v1.3 reference — confirm on a live run):**
-- **Budget is in the account currency as a plain number (e.g., dollars), NOT cents or micros.** `"budget": 50` = $50. This is the opposite of Meta (cents), Reddit (micros), X (micros), and Google (micros) — do not carry those conventions over.
-- `budget_mode`: `BUDGET_MODE_DAY`, `BUDGET_MODE_TOTAL`, or `BUDGET_MODE_INFINITE`. With Campaign Budget Optimization on, only `BUDGET_MODE_DAY` is supported.
-- **`buying_type`**: `AUCTION` (default; standard auction-based buying) or `RESERVATION` (used for Reach & Frequency reservation buys). Include this field explicitly — leaving it off can produce different defaults across API versions.
-- `objective_type`: e.g. `REACH`, `TRAFFIC`, `VIDEO_VIEWS`, `ENGAGEMENT`, `LEAD_GENERATION`, `APP_PROMOTION`, `WEB_CONVERSIONS`, `PRODUCT_SALES`. Some values have been renamed across API versions (older `LANDING_PAGE`/`APP`) — read the current enum for your version.
-- **Reach & Frequency is NOT an objective_type.** It is a *buying type*: set `buying_type: "RESERVATION"` (not `AUCTION`), pair with `budget_mode: "BUDGET_MODE_TOTAL"`, add a fixed `schedule_start_time`/`schedule_end_time`, and set the objective normally (typically `REACH`). Do NOT put `RF_REACH` in `objective_type` — that was documented incorrectly in an earlier version of this file.
-- **Paused-on-create caveat (observed behavior, not officially documented):** `operation_status` (`ENABLE` / `DISABLE`) has been reported as **allow-list-gated on some apps** — an app not on the allow-list may have `DISABLE` silently ignored and the object created as `ENABLE`. This is anecdotal (community reports), not a documented v1.3 behavior. Do not assume `DISABLE` took effect: re-read the object after create, and if it isn't disabled, call `/campaign/status/update/` before adding creatives. Nothing serves until an ad group + approved ad exist, but treat this as the key safety check.
-- Minimum budgets are enforced server-side (roughly $50/day campaign, $20/day ad group); a smaller value errors.
+**Key API behaviors (verified 2026-07-12 against TikTok v1.3 docs):**
+- **Budget field is `budget` — float in account currency, NOT cents, NOT micros.** For USD: `"budget": 50` = $50 (precision 0.01). This is the odd one out — Meta uses cents, Reddit/X/Google use micros. Do not carry those conventions over.
+- `budget_mode`: `BUDGET_MODE_DAY`, `BUDGET_MODE_DYNAMIC_DAILY_BUDGET`, `BUDGET_MODE_TOTAL`, `BUDGET_MODE_INFINITE` (forced for `RF_REACH`).
+- **`buying_type`**: `AUCTION` (default; auction-based) or `RESERVATION` (Reach & Frequency reservation buys). Include explicitly — defaults can shift across API versions.
+- `objective_type`: `TRAFFIC`, `REACH`, `RF_REACH` (guaranteed reach), `ENGAGEMENT`, `VIDEO_VIEWS`, `WEB_CONVERSIONS`, `LEAD_GENERATION`, `APP_PROMOTION`, `PRODUCT_SALES`. All confirmed against v1.3 primary docs 2026-07-12.
+- **Reach & Frequency uses `RF_REACH` as an objective_type** paired with `buying_type: "RESERVATION"` + `budget_mode: "BUDGET_MODE_INFINITE"` + `/adgroup/rf/create/` endpoint. This is a documented API path (confirmed), not the older "buying_type-only" pattern I documented earlier — updated 2026-07-12.
+- **Paused-on-create**: `operation_status: "DISABLE"` at create time (default is `"ENABLE"`). **Caveat for RF campaigns:** `DISABLE` cannot be passed on RF campaigns — you must pass `ENABLE` or omit. For auction campaigns, always create `DISABLE`, GET-verify, then flip `ENABLE`.
+- **Bid fields moved to ad group in v1.3.** `bid_type`, `deep_bid_type`, `roas_bid`, `optimize_goal` are **deprecated at the campaign level** — they're now ad-group fields only. If you set them on a campaign, they're ignored.
+- Minimum budgets (per TikTok's budget-verification-ratio table, USD): ~**$50/day campaign / $20/day ad group** for auction; **$10/day** floor for PRODUCT_SALES/STORE. Below the floor, the API returns an error.
 
 ### Token refresh
 
@@ -171,9 +172,24 @@ POST /campaign/status/update/  { advertiser_id, campaign_ids: [...], operation_s
 ```
 The same endpoints take `ENABLE` / `DISABLE` to pause or resume.
 
+### Regulated categories (finance / crypto)
+
+TikTok's Financial Services policy is one of the strictest in the industry.
+
+**Cryptocurrency, exchanges, wallets, NFT trading, crypto advisory are PROHIBITED in the US** — the policy explicitly lists these as not allowed for US-based ads. Some Latin American markets (Argentina, Chile, Colombia, Ecuador, Mexico, Peru, Uruguay) may permit crypto ads with local license + 18+ gating + TikTok Sales Rep approval + disclaimers.
+
+**Self-serve is not available for regulated finance** — a Sales Rep application is required for any restricted-category advertiser.
+
+**For a stablecoin infra brand** (Eco-style, B2B, developer-focused): **do not target US audiences on TikTok**. Other geos require Rep + Verified Business Account + 18+ gating + local license + disclaimers. Positioning must be strictly B2B/infra/education, never consumer-facing "buy/hold/yield."
+
+**`special_industries` field** (`HOUSING`, `EMPLOYMENT`, `CREDIT`) is US/CA **anti-discrimination law compliance**, not crypto/finance. It restricts detailed-targeting features for those verticals in the US/CA under anti-discrimination law — **not the same as Meta's crypto authorization**. Once selected on a campaign, the value **cannot be changed or re-enabled**, only removed.
+
+Source: [ads.tiktok.com — Financial Services policy](https://ads.tiktok.com/help/article/tiktok-ads-policy-financial-services)
+
 ### Key settings Claude enforces
 
-- Campaign/ad group created disabled (or in sandbox) until you explicitly confirm launch — and verified as disabled, given the `operation_status` allow-list caveat
-- Budget always expressed in the account currency (dollars), never cents/micros
-- Automatic targeting / audience expansion off unless you ask for it
-- Placements restricted to TikTok unless you opt into Pangle / the news-feed apps
+- Auction campaigns: create with `operation_status: "DISABLE"`, GET-verify, then flip `"ENABLE"`. RF campaigns can't be created disabled (documented).
+- Budget: `budget` (float, account currency) — never cents or micros
+- Smart Targeting: `smart_audience_enabled` and `smart_interest_behavior_enabled` both left `false` for cold audiences. Ignore the deprecated `auto_targeting_enabled`.
+- Placements: TikTok only by default; opt in to Pangle / News Feed apps explicitly if wanted
+- **Crypto/stablecoin advertisers in the US**: block campaign create — the platform prohibits it. For allowed geos, require Sales Rep + Verified Business Account before any create call.
